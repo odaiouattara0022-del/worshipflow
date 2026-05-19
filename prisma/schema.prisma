@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  pin       String
+  role      String   @default("MEMBER") // ADMIN, LEADER, MEMBER
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments   TeamAssignment[]
+  availability  Availability[]
+  notifications Notification[]
+  assignedItems ServiceItem[]    @relation("ItemAssignee")
+}
+
+model Service {
+  id         String   @id @default(uuid())
+  title      String
+  date       DateTime
+  type       String   @default("culte")
+  status     String   @default("DRAFT") // DRAFT, READY, DONE
+  templateId String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  template    ServiceTemplate? @relation(fields: [templateId], references: [id])
+  items       ServiceItem[]
+  assignments TeamAssignment[]
+}
+
+model ServiceItem {
+  id            String   @id @default(uuid())
+  serviceId     String
+  type          String   // SONG, PRAYER, SERMON, OFFERING, ANNOUNCEMENT, VIDEO, COUNTDOWN, CUSTOM
+  title         String
+  order         Int
+  duration      Int      @default(5)
+  songId        String?
+  arrangementId String?
+  notes         String?
+  assigneeId    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  service     Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  song        Song?            @relation(fields: [songId], references: [id])
+  arrangement SongArrangement? @relation(fields: [arrangementId], references: [id])
+  assignee    User?            @relation("ItemAssignee", fields: [assigneeId], references: [id])
+}
+
+model Song {
+  id               String    @id @default(uuid())
+  title            String
+  author           String?
+  lyrics           String    @default("")
+  defaultKey       String    @default("Do")
+  tempo            Int?
+  tags             String    @default("")
+  ccliNumber       String?
+  proPresenterPath String?
+  lastUsedAt       DateTime?
+  useCount         Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  arrangements SongArrangement[]
+  serviceItems ServiceItem[]
+}
+
+model SongArrangement {
+  id           String   @id @default(uuid())
+  songId       String
+  name         String   @default("Standard")
+  key          String
+  sectionOrder String   @default("V1,C,V2,C")
+  chords       String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  song         Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+  serviceItems ServiceItem[]
+}
+
+model TeamAssignment {
+  id         String    @id @default(uuid())
+  serviceId  String
+  userId     String
+  role       String
+  status     String    @default("PENDING") // PENDING, CONFIRMED, DECLINED
+  notifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, userId, role])
+}
+
+model ServiceTemplate {
+  id              String   @id @default(uuid())
+  name            String
+  items           String   @default("[]") // JSON string
+  defaultDuration Int      @default(90)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  services Service[]
+}
+
+model Availability {
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime
+  available Boolean  @default(true)
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model Notification {
+  id      String    @id @default(uuid())
+  userId  String
+  type    String    // ASSIGNMENT, REMINDER, UPDATE
+  message String
+  readAt  DateTime?
+  channel String    @default("IN_APP") // EMAIL, WHATSAPP, IN_APP
+  sentAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AppSettings {
+  id    String @id @default("singleton")
+  key   String @unique
+  value String
+}
