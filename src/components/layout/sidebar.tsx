@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { NotificationBadge } from "@/components/notifications/notification-badge";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: "📊" },
@@ -11,11 +13,30 @@ const navItems = [
   { href: "/team", label: "Équipe", icon: "👥" },
   { href: "/propresenter", label: "ProPresenter", icon: "📽️" },
   { href: "/calendar", label: "Calendrier", icon: "📅" },
-  { href: "/notifications", label: "Notifications", icon: "🔔" },
+  { href: "/notifications", label: "Notifications", icon: "🔔", showBadge: true },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/notifications?unread=true");
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.unreadCount);
+        }
+      } catch {
+        // Silently fail — sidebar shouldn't break over notification fetch
+      }
+    }
+    fetchUnread();
+    // Poll every 60 seconds
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <aside className="w-56 bg-card border-r border-border flex flex-col h-screen fixed left-0 top-0">
@@ -39,7 +60,10 @@ export function Sidebar() {
               )}
             >
               <span>{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {"showBadge" in item && item.showBadge && (
+                <NotificationBadge count={unreadCount} />
+              )}
             </Link>
           );
         })}
