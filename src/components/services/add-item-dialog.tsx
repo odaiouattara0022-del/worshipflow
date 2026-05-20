@@ -1,0 +1,126 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+
+const ITEM_TYPES = [
+  { value: "SONG", label: "Chant", icon: "🎵" },
+  { value: "PRAYER", label: "Prière", icon: "🙏" },
+  { value: "SERMON", label: "Prédication", icon: "📖" },
+  { value: "OFFERING", label: "Offrande", icon: "💝" },
+  { value: "ANNOUNCEMENT", label: "Annonce", icon: "📢" },
+  { value: "VIDEO", label: "Vidéo", icon: "🎬" },
+  { value: "COUNTDOWN", label: "Compte à rebours", icon: "⏱" },
+  { value: "CUSTOM", label: "Personnalisé", icon: "✏️" },
+] as const;
+
+interface AddItemDialogProps {
+  serviceId: string;
+  onItemAdded: (item: Record<string, unknown>) => void;
+}
+
+export function AddItemDialog({ serviceId, onItemAdded }: AddItemDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState<string>("");
+  const [title, setTitle] = useState("");
+  const [duration, setDuration] = useState("5");
+  const [loading, setLoading] = useState(false);
+
+  function reset() {
+    setSelectedType("");
+    setTitle("");
+    setDuration("5");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedType) return;
+
+    setLoading(true);
+    const res = await fetch(`/api/services/${serviceId}/items`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: selectedType,
+        title: title || ITEM_TYPES.find((t) => t.value === selectedType)?.label || selectedType,
+        duration: parseInt(duration) || 5,
+      }),
+    });
+
+    if (res.ok) {
+      const item = await res.json();
+      onItemAdded(item);
+      reset();
+      setOpen(false);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button variant="outline" className="w-full border-dashed" />}>
+        + Ajouter un élément
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Ajouter un élément</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            {ITEM_TYPES.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors text-left",
+                  selectedType === type.value
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:bg-muted/50"
+                )}
+                onClick={() => setSelectedType(type.value)}
+              >
+                <span>{type.icon}</span>
+                <span>{type.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {selectedType && (
+            <>
+              <div className="space-y-2">
+                <Label>Titre</Label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={ITEM_TYPES.find((t) => t.value === selectedType)?.label}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Durée (minutes)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Ajout..." : "Ajouter"}
+              </Button>
+            </>
+          )}
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
