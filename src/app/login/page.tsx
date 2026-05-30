@@ -34,23 +34,21 @@ export default async function LoginPage({
 
           <div>
             <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
-              PIN
+              Mot de passe
             </label>
             <input
               type="password"
               name="pin"
               required
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="••••"
+              placeholder="Votre mot de passe"
               autoComplete="current-password"
-              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "24px", textAlign: "center", letterSpacing: "0.5em", boxSizing: "border-box" }}
+              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
             />
           </div>
 
           {error && (
             <p style={{ color: "#ef4444", textAlign: "center", fontSize: "14px", margin: "0" }}>
-              {error === "invalid" ? "Nom ou PIN incorrect" : "Erreur de connexion"}
+              {error === "invalid" ? "Nom ou mot de passe incorrect" : "Erreur de connexion"}
             </p>
           )}
 

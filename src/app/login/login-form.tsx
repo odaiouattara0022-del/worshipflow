@@ -128,19 +128,17 @@ export function LoginForm({ members }: { members: TeamMember[] }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="pin">Entrez votre PIN</Label>
+                <Label htmlFor="pin">Mot de passe</Label>
                 <Input
                   id="pin"
                   type="password"
-                  inputMode="numeric"
-                  maxLength={6}
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
-                  placeholder="••••"
+                  placeholder="Votre mot de passe"
                   required
                   autoComplete="current-password"
                   autoFocus
-                  className="text-center text-2xl tracking-[0.5em] h-14"
+                  className="h-14"
                 />
               </div>
               {error && (
@@ -149,7 +147,7 @@ export function LoginForm({ members }: { members: TeamMember[] }) {
               <Button
                 type="submit"
                 className="w-full h-12 text-base"
-                disabled={loading || pin.length < 4}
+                disabled={loading || pin.length < 1}
               >
                 {loading ? "Connexion..." : "Se connecter"}
               </Button>

@@ -68,9 +68,9 @@ export async function PUT(
   if (body.email !== undefined) data.email = body.email || null;
   if (body.phone !== undefined) data.phone = body.phone || null;
   if (body.pin) {
-    if (String(body.pin).length < 4) {
+    if (String(body.pin).length < 1) {
       return NextResponse.json(
-        { error: "Le PIN doit contenir au moins 4 caractères" },
+        { error: "Le mot de passe est requis" },
         { status: 400 }
       );
     }

@@ -1,5 +1,5 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@worshipflow.local";
+const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@prosendworship.local";
 
 export async function sendEmail(
   to: string,

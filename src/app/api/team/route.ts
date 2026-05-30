@@ -36,9 +36,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (String(pin).length < 4) {
+  if (String(pin).length < 1) {
     return NextResponse.json(
-      { error: "Le PIN doit contenir au moins 4 caractères" },
+      { error: "Le mot de passe est requis" },
       { status: 400 }
     );
   }

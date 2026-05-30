@@ -168,18 +168,17 @@ export function MemberForm({ trigger, member, onSuccess, isAdmin = true }: Membe
             )}
           </div>
 
-          {/* PIN */}
+          {/* Mot de passe */}
           <div className="space-y-2">
             <Label>
-              PIN {isCreating ? "* (min. 4 chiffres)" : "(laisser vide pour garder)"}
+              Mot de passe {isCreating ? "*" : "(laisser vide pour garder)"}
             </Label>
             <Input
               type="password"
               value={form.pin}
               onChange={(e) => setForm({ ...form, pin: e.target.value })}
               required={isCreating}
-              minLength={isCreating ? 4 : undefined}
-              placeholder={isCreating ? "Minimum 4 caractères" : "Laisser vide pour garder"}
+              placeholder={isCreating ? "Mot de passe" : "Laisser vide pour garder"}
             />
           </div>
 

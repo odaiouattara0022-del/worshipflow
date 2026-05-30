@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     redirect(`/register?${params.toString()}`);
   }
 
-  if (String(pin).length < 4) {
+  if (String(pin).length < 1) {
     params.set("error", "short");
     redirect(`/register?${params.toString()}`);
   }

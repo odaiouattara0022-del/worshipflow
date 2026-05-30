@@ -8,9 +8,9 @@ export default async function RegisterPage({
   const { error, name, email, phone } = await searchParams;
 
   const errorMessages: Record<string, string> = {
-    missing: "Le nom et le PIN sont requis",
-    short: "Le PIN doit contenir au moins 4 chiffres",
-    mismatch: "Les deux PIN ne correspondent pas",
+    missing: "Le nom et le mot de passe sont requis",
+    short: "Le mot de passe doit contenir au moins 1 caractère",
+    mismatch: "Les deux mots de passe ne correspondent pas",
     exists: "Ce nom est déjà utilisé",
     server: "Erreur serveur, réessayez",
   };
@@ -68,31 +68,27 @@ export default async function RegisterPage({
 
           <div>
             <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
-              PIN (4 chiffres minimum) *
+              Mot de passe *
             </label>
             <input
               type="password"
               name="pin"
               required
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="••••"
-              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "24px", textAlign: "center", letterSpacing: "0.5em", boxSizing: "border-box" }}
+              placeholder="Votre mot de passe"
+              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
             />
           </div>
 
           <div>
             <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
-              Confirmer le PIN *
+              Confirmer le mot de passe *
             </label>
             <input
               type="password"
               name="pinConfirm"
               required
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="••••"
-              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "24px", textAlign: "center", letterSpacing: "0.5em", boxSizing: "border-box" }}
+              placeholder="Confirmez votre mot de passe"
+              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
             />
           </div>
 

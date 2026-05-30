@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     return new Response(text, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "Content-Disposition": `attachment; filename="worshipflow-chants-${new Date().toISOString().slice(0, 10)}.txt"`,
+        "Content-Disposition": `attachment; filename="prosendworship-chants-${new Date().toISOString().slice(0, 10)}.txt"`,
       },
     });
   }
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   return new Response(JSON.stringify(songs, null, 2), {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="worshipflow-chants-${new Date().toISOString().slice(0, 10)}.json"`,
+      "Content-Disposition": `attachment; filename="prosendworship-chants-${new Date().toISOString().slice(0, 10)}.json"`,
     },
   });
 }
