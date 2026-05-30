@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const publicPaths = ["/login", "/api/auth/login"];
+const publicPaths = ["/login", "/register", "/api/auth/login", "/api/auth/login-form", "/api/auth/register", "/api/auth/members", "/api/team"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
   if (publicPaths.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  // Allow GET /api/team for login page member list
+  if (pathname === "/api/team" && request.method === "GET") {
     return NextResponse.next();
   }
 

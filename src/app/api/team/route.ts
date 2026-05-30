@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { hashPin } from "@/lib/auth";
+import { hashPin, requireAdmin } from "@/lib/auth";
 
 export async function GET() {
   const users = await prisma.user.findMany({
@@ -18,7 +18,14 @@ export async function GET() {
   return NextResponse.json(users);
 }
 
+/**
+ * POST /api/team — Create a new member.
+ * ADMIN only.
+ */
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
   const body = await request.json();
   const { name, email, phone, role, pin } = body;
 
@@ -26,6 +33,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Le nom et le PIN sont requis" },
       { status: 400 }
+    );
+  }
+
+  if (String(pin).length < 4) {
+    return NextResponse.json(
+      { error: "Le PIN doit contenir au moins 4 caractères" },
+      { status: 400 }
+    );
+  }
+
+  // Check for duplicate name
+  const existing = await prisma.user.findFirst({
+    where: { name: { equals: name } },
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: "Un membre avec ce nom existe déjà" },
+      { status: 409 }
     );
   }
 

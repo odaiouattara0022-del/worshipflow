@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
@@ -69,6 +69,13 @@ model Song {
   tempo            Int?
   tags             String    @default("")
   ccliNumber       String?
+  publisher        String?
+  copyrightYear    Int?
+  artistCredits    String?
+  album            String?
+  copyrightDisplay Boolean   @default(true)
+  audioUrl         String?   // Local path or URL to audio file (rehearsal track, click, etc.)
+  audioLabel       String?   // Label: "Piste de répétition", "Click track", etc.
   proPresenterPath String?
   lastUsedAt       DateTime?
   useCount         Int       @default(0)
@@ -77,6 +84,16 @@ model Song {
 
   arrangements SongArrangement[]
   serviceItems ServiceItem[]
+  usageLogs    SongUsageLog[]
+}
+
+model SongUsageLog {
+  id        String   @id @default(uuid())
+  songId    String
+  serviceId String?
+  usedAt    DateTime @default(now())
+
+  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
 }
 
 model SongArrangement {
@@ -151,4 +168,15 @@ model AppSettings {
   id    String @id @default("singleton")
   key   String @unique
   value String
+}
+
+model PPDevice {
+  id          String   @id @default(uuid())
+  name        String
+  host        String
+  port        Int      @default(1025)
+  isDefault   Boolean  @default(false)
+  libraryPath String   @default("") // Chemin vers Libraries/Default (local ou réseau UNC)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

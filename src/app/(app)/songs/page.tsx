@@ -1,7 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/db";
 import { Header } from "@/components/layout/header";
 import { SongCard } from "@/components/songs/song-card";
 import { SongForm } from "@/components/songs/song-form";
+import { ImportExportButtons } from "@/components/songs/import-export";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -38,10 +41,14 @@ export default async function SongsPage({
         }
       />
 
-      <form className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4">
+        <ImportExportButtons />
+      </div>
+
+      <form className="flex flex-col sm:flex-row gap-2 mb-6">
         <Input
           name="search"
-          placeholder="Rechercher un chant (titre, auteur, paroles...)"
+          placeholder="Rechercher un titre, auteur..."
           defaultValue={params.search}
           className="flex-1"
         />

@@ -2,9 +2,77 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { scanLibrary } from "@/lib/propresenter/scanner";
 import { join } from "path";
+import { networkInterfaces } from "os";
 
+/**
+ * GET /api/propresenter/scan
+ * Scan the local network for ProPresenter instances.
+ * Returns a list of found devices with their name, IP, port.
+ */
+export async function GET() {
+  // Get local network prefix from this machine's IP
+  const nets = networkInterfaces();
+  const localIPs: string[] = [];
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] ?? []) {
+      if (net.family === "IPv4" && !net.internal) {
+        localIPs.push(net.address);
+      }
+    }
+  }
+
+  if (localIPs.length === 0) {
+    return NextResponse.json({ devices: [], error: "Pas de réseau détecté" });
+  }
+
+  // Scan common ports on the local subnet
+  const found: Array<{ name: string; host: string; port: number; description: string }> = [];
+  const portsToScan = [12345, 1025, 50001];
+
+  for (const localIP of localIPs) {
+    const parts = localIP.split(".");
+    const prefix = parts.slice(0, 3).join(".");
+
+    const promises: Promise<void>[] = [];
+    for (let i = 1; i <= 254; i++) {
+      const ip = `${prefix}.${i}`;
+      for (const port of portsToScan) {
+        promises.push(
+          fetch(`http://${ip}:${port}/version`, {
+            signal: AbortSignal.timeout(1500),
+          })
+            .then(async (res) => {
+              if (res.ok) {
+                const data = await res.json();
+                // Only add if it looks like ProPresenter
+                if (data.host_description?.includes("ProPresenter") || data.api_version) {
+                  found.push({
+                    name: data.name || ip,
+                    host: ip,
+                    port,
+                    description: data.host_description || "ProPresenter",
+                  });
+                }
+              }
+            })
+            .catch(() => {
+              // Not responding — skip
+            })
+        );
+      }
+    }
+
+    await Promise.all(promises);
+  }
+
+  return NextResponse.json({ devices: found });
+}
+
+/**
+ * POST /api/propresenter/scan
+ * Scan the local PP library and import songs.
+ */
 export async function POST() {
-  // Resolve the library path from AppSettings or env
   let ppDataPath = process.env.PP_DATA_PATH || "";
 
   try {
@@ -28,7 +96,6 @@ export async function POST() {
     );
   }
 
-  // The Libraries dir is typically inside the PP data path
   const librariesDir = ppDataPath.toLowerCase().includes("libraries")
     ? ppDataPath
     : join(ppDataPath, "Libraries");
@@ -40,7 +107,6 @@ export async function POST() {
   let skipped = 0;
 
   for (const pres of presentations) {
-    // Join slide texts as lyrics
     const lyrics = pres.slides.map((s) => s.text).join("\n\n---\n\n");
 
     if (!lyrics.trim()) {
@@ -48,27 +114,20 @@ export async function POST() {
       continue;
     }
 
-    // Normalize the file path for comparison
     const normalizedPath = pres.filePath.replace(/\\/g, "/");
 
     try {
-      // Check if a song with this proPresenterPath already exists
       const existing = await prisma.song.findFirst({
         where: { proPresenterPath: normalizedPath },
       });
 
       if (existing) {
-        // Update lyrics
         await prisma.song.update({
           where: { id: existing.id },
-          data: {
-            lyrics,
-            title: pres.title,
-          },
+          data: { lyrics, title: pres.title },
         });
         updated++;
       } else {
-        // Create new song
         await prisma.song.create({
           data: {
             title: pres.title,

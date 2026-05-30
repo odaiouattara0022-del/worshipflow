@@ -58,3 +58,38 @@ export async function logout(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete("wf_session");
 }
+
+/**
+ * Check if the current user is authenticated.
+ * Returns the user or null.
+ */
+export async function requireAuth() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return user;
+}
+
+/**
+ * Check if the current user is an ADMIN.
+ * Returns { user } on success, or { error: Response } on failure.
+ */
+export async function requireAdmin(): Promise<
+  | { user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>; error?: never }
+  | { user?: never; error: Response }
+> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return {
+      error: Response.json({ error: "Non authentifié" }, { status: 401 }),
+    };
+  }
+  if (user.role !== "ADMIN") {
+    return {
+      error: Response.json(
+        { error: "Accès refusé — rôle administrateur requis" },
+        { status: 403 }
+      ),
+    };
+  }
+  return { user };
+}

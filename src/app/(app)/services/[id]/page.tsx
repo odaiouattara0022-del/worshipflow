@@ -23,6 +23,7 @@ import { ServiceItemRow } from "@/components/services/service-item-row";
 import { ItemDetailPanel } from "@/components/services/item-detail-panel";
 import { AddItemDialog } from "@/components/services/add-item-dialog";
 import { SendToPPButton } from "@/components/services/send-to-pp-button";
+import { DuplicateServiceButton } from "@/components/services/duplicate-service-button";
 
 interface Song {
   id: string;
@@ -202,6 +203,7 @@ export default function ServiceEditorPage() {
               {statusTransition.label}
             </Button>
           )}
+          <DuplicateServiceButton serviceId={service.id} serviceTitle={service.title} />
           <SendToPPButton serviceId={service.id} />
         </div>
       </div>

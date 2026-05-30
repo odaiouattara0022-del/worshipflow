@@ -29,6 +29,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       tempo: body.tempo !== undefined ? (body.tempo ? parseInt(body.tempo) : null) : undefined,
       tags: body.tags ?? undefined,
       ccliNumber: body.ccliNumber ?? undefined,
+      publisher: body.publisher ?? undefined,
+      copyrightYear: body.copyrightYear !== undefined
+        ? (body.copyrightYear ? parseInt(body.copyrightYear) : null)
+        : undefined,
+      artistCredits: body.artistCredits ?? undefined,
+      album: body.album ?? undefined,
+      copyrightDisplay: body.copyrightDisplay ?? undefined,
       proPresenterPath: body.proPresenterPath ?? undefined,
     },
     include: { arrangements: true },

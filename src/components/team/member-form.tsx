@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -28,10 +28,12 @@ interface MemberFormProps {
     phone: string | null;
     role: string;
   };
+  onSuccess?: () => void;
+  /** Whether the current user is an admin (controls which fields are editable) */
+  isAdmin?: boolean;
 }
 
-export function MemberForm({ trigger, member }: MemberFormProps) {
-  const router = useRouter();
+export function MemberForm({ trigger, member, onSuccess, isAdmin = true }: MemberFormProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -65,24 +67,34 @@ export function MemberForm({ trigger, member }: MemberFormProps) {
       phone: form.phone,
       role: form.role,
     };
-    // Only send pin if provided (required for create, optional for edit)
     if (form.pin) {
       payload.pin = form.pin;
     }
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (res.ok) {
-      setOpen(false);
-      resetForm();
-      router.refresh();
+      if (res.ok) {
+        setOpen(false);
+        resetForm();
+        toast.success(member ? "Membre modifié" : "Membre créé");
+        onSuccess?.();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Erreur lors de l'enregistrement");
+      }
+    } catch {
+      toast.error("Erreur de connexion");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
+
+  const isCreating = !member;
 
   return (
     <Dialog
@@ -96,18 +108,26 @@ export function MemberForm({ trigger, member }: MemberFormProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {member ? "Modifier le membre" : "Nouveau membre"}
+            {isCreating ? "Nouveau membre" : `Modifier — ${member.name}`}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name — admin only for edit, always for create */}
           <div className="space-y-2">
             <Label>Nom *</Label>
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
+              disabled={!isCreating && !isAdmin}
             />
+            {!isCreating && !isAdmin && (
+              <p className="text-xs text-muted-foreground">
+                Seul un admin peut modifier le nom
+              </p>
+            )}
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Email</Label>
@@ -125,12 +145,15 @@ export function MemberForm({ trigger, member }: MemberFormProps) {
               />
             </div>
           </div>
+
+          {/* Role — admin only */}
           <div className="space-y-2">
             <Label>R&ocirc;le</Label>
             <select
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm disabled:opacity-50"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
+              disabled={!isAdmin}
             >
               {ROLES.map((r) => (
                 <option key={r.value} value={r.value}>
@@ -138,21 +161,34 @@ export function MemberForm({ trigger, member }: MemberFormProps) {
                 </option>
               ))}
             </select>
+            {!isAdmin && (
+              <p className="text-xs text-muted-foreground">
+                Seul un admin peut changer le r&ocirc;le
+              </p>
+            )}
           </div>
+
+          {/* PIN */}
           <div className="space-y-2">
             <Label>
-              PIN {member ? "(laisser vide pour garder)" : "*"}
+              PIN {isCreating ? "* (min. 4 chiffres)" : "(laisser vide pour garder)"}
             </Label>
             <Input
               type="password"
               value={form.pin}
               onChange={(e) => setForm({ ...form, pin: e.target.value })}
-              required={!member}
-              placeholder={member ? "Laisser vide pour garder" : ""}
+              required={isCreating}
+              minLength={isCreating ? 4 : undefined}
+              placeholder={isCreating ? "Minimum 4 caractères" : "Laisser vide pour garder"}
             />
           </div>
+
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Enregistrement..." : member ? "Modifier" : "Créer"}
+            {loading
+              ? "Enregistrement..."
+              : isCreating
+              ? "Créer le membre"
+              : "Enregistrer les modifications"}
           </Button>
         </form>
       </DialogContent>

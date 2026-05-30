@@ -34,7 +34,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { title, author, lyrics, defaultKey, tempo, tags, ccliNumber, proPresenterPath } = body;
+  const {
+    title, author, lyrics, defaultKey, tempo, tags,
+    ccliNumber, publisher, copyrightYear, artistCredits, album, copyrightDisplay,
+    proPresenterPath,
+  } = body;
 
   if (!title) {
     return NextResponse.json({ error: "Le titre est requis" }, { status: 400 });
@@ -49,6 +53,11 @@ export async function POST(request: NextRequest) {
       tempo: tempo ? parseInt(tempo) : null,
       tags: tags || "",
       ccliNumber: ccliNumber || null,
+      publisher: publisher || null,
+      copyrightYear: copyrightYear ? parseInt(copyrightYear) : null,
+      artistCredits: artistCredits || null,
+      album: album || null,
+      copyrightDisplay: copyrightDisplay !== undefined ? copyrightDisplay : true,
       proPresenterPath: proPresenterPath || null,
     },
     include: { arrangements: true },

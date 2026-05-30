@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { DeviceManager } from "@/components/propresenter/device-selector";
 
 interface SettingsMap {
   [key: string]: string;
@@ -15,6 +16,7 @@ interface SettingsMap {
 
 const DEFAULT_SETTINGS: SettingsMap = {
   churchName: "Mon Église",
+  ccliLicense: "",
   ppApiHost: "127.0.0.1",
   ppApiPort: "1025",
   ppLibraryPath: "",
@@ -100,7 +102,7 @@ export default function SettingsPage() {
           <h2 className="text-lg font-semibold mb-4">Général</h2>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="churchName">Nom de l&apos;église</Label>
+              <Label htmlFor="churchName">Nom de l&apos;&eacute;glise</Label>
               <Input
                 id="churchName"
                 value={settings.churchName}
@@ -108,12 +110,37 @@ export default function SettingsPage() {
                 className="mt-1"
               />
             </div>
+            <div>
+              <Label htmlFor="ccliLicense">Num&eacute;ro de licence CCLI</Label>
+              <Input
+                id="ccliLicense"
+                value={settings.ccliLicense}
+                onChange={(e) => handleChange("ccliLicense", e.target.value)}
+                placeholder="ex: 1234567"
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Utilis&eacute; pour le reporting CCLI et l&apos;affichage du copyright dans ProPresenter.
+              </p>
+            </div>
           </div>
         </Card>
 
-        {/* ProPresenter settings */}
+        {/* ProPresenter Devices */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">ProPresenter</h2>
+          <h2 className="text-lg font-semibold mb-2">Appareils ProPresenter</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Connectez plusieurs ordinateurs ProPresenter et choisissez sur lequel envoyer vos chants et playlists.
+          </p>
+          <DeviceManager />
+        </Card>
+
+        {/* ProPresenter settings (fallback) */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">ProPresenter — Configuration par défaut</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Utilisé uniquement si aucun appareil n&apos;est configuré ci-dessus.
+          </p>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -147,6 +174,42 @@ export default function SettingsPage() {
                 className="mt-1"
               />
             </div>
+          </div>
+        </Card>
+
+        {/* CCLI Reporting */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Rapport CCLI</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Exportez un rapport d&apos;utilisation des chants pour votre d&eacute;claration CCLI annuelle.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const year = new Date().getFullYear();
+                window.open(`/api/ccli-report?from=${year}-01-01&to=${year}-12-31&format=csv`, "_blank");
+              }}
+            >
+              Exporter l&apos;ann&eacute;e en cours (CSV)
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={async () => {
+                const year = new Date().getFullYear();
+                try {
+                  const res = await fetch(`/api/ccli-report?from=${year}-01-01&to=${year}-12-31`);
+                  if (res.ok) {
+                    const data = await res.json();
+                    toast.info(`${data.totalSongs} chant(s) utilis&eacute;(s) ${data.totalUses} fois cette ann&eacute;e`);
+                  }
+                } catch {
+                  toast.error("Erreur lors du chargement du rapport");
+                }
+              }}
+            >
+              Voir les statistiques
+            </Button>
           </div>
         </Card>
 

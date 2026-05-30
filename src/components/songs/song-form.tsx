@@ -26,6 +26,12 @@ interface SongFormProps {
     defaultKey: string;
     tempo: number | null;
     tags: string;
+    ccliNumber: string | null;
+    publisher: string | null;
+    copyrightYear: number | null;
+    artistCredits: string | null;
+    album: string | null;
+    copyrightDisplay: boolean;
   };
 }
 
@@ -33,6 +39,7 @@ export function SongForm({ trigger, song }: SongFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showCcli, setShowCcli] = useState(!!song?.ccliNumber);
   const [form, setForm] = useState({
     title: song?.title || "",
     author: song?.author || "",
@@ -40,6 +47,12 @@ export function SongForm({ trigger, song }: SongFormProps) {
     defaultKey: song?.defaultKey || "Do",
     tempo: song?.tempo?.toString() || "",
     tags: song?.tags || "",
+    ccliNumber: song?.ccliNumber || "",
+    publisher: song?.publisher || "",
+    copyrightYear: song?.copyrightYear?.toString() || "",
+    artistCredits: song?.artistCredits || "",
+    album: song?.album || "",
+    copyrightDisplay: song?.copyrightDisplay ?? true,
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -126,6 +139,79 @@ export function SongForm({ trigger, song }: SongFormProps) {
               placeholder={"[Couplet 1]\nParoles ici...\n\n[Refrain]\nParoles du refrain..."}
             />
           </div>
+
+          {/* CCLI / Copyright section */}
+          <div className="border-t pt-3">
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowCcli(!showCcli)}
+            >
+              <span className="text-xs">{showCcli ? "▼" : "▶"}</span>
+              Copyright / CCLI
+              {form.ccliNumber && <span className="text-xs text-primary">({form.ccliNumber})</span>}
+            </button>
+
+            {showCcli && (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>N° CCLI</Label>
+                    <Input
+                      value={form.ccliNumber}
+                      onChange={(e) => setForm({ ...form, ccliNumber: e.target.value })}
+                      placeholder="ex: 6428767"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ann&eacute;e de copyright</Label>
+                    <Input
+                      type="number"
+                      value={form.copyrightYear}
+                      onChange={(e) => setForm({ ...form, copyrightYear: e.target.value })}
+                      placeholder="ex: 2013"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>&Eacute;diteur</Label>
+                    <Input
+                      value={form.publisher}
+                      onChange={(e) => setForm({ ...form, publisher: e.target.value })}
+                      placeholder="ex: Hillsong Publishing"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Artiste / Interpr&egrave;te</Label>
+                    <Input
+                      value={form.artistCredits}
+                      onChange={(e) => setForm({ ...form, artistCredits: e.target.value })}
+                      placeholder="ex: Hillsong Worship"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Album</Label>
+                  <Input
+                    value={form.album}
+                    onChange={(e) => setForm({ ...form, album: e.target.value })}
+                    placeholder="ex: Glorious Ruins"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.copyrightDisplay}
+                    onChange={(e) => setForm({ ...form, copyrightDisplay: e.target.checked })}
+                    className="rounded border-input"
+                  />
+                  Afficher le copyright sur les slides ProPresenter
+                </label>
+              </div>
+            )}
+          </div>
+
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Enregistrement..." : song ? "Modifier" : "Créer"}
           </Button>

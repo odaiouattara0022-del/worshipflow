@@ -5,6 +5,8 @@ import { Header } from "@/components/layout/header";
 import { MemberCard } from "@/components/team/member-card";
 import { MemberForm } from "@/components/team/member-form";
 import { Button } from "@/components/ui/button";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { toast } from "sonner";
 
 interface Member {
   id: string;
@@ -18,8 +20,9 @@ interface Member {
 export default function TeamPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user: currentUser, isAdmin } = useCurrentUser();
 
-  useEffect(() => {
+  function loadMembers() {
     fetch("/api/team")
       .then((res) => res.json())
       .then((data) => {
@@ -27,7 +30,28 @@ export default function TeamPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    loadMembers();
   }, []);
+
+  async function handleDelete(memberId: string, memberName: string) {
+    if (!confirm(`Supprimer ${memberName} de l'équipe ?`)) return;
+
+    try {
+      const res = await fetch(`/api/team/${memberId}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success(`${memberName} supprimé`);
+        loadMembers();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Erreur lors de la suppression");
+      }
+    } catch {
+      toast.error("Erreur de connexion");
+    }
+  }
 
   return (
     <div>
@@ -35,9 +59,20 @@ export default function TeamPage() {
         title="Équipe"
         subtitle={`${members.length} membre${members.length !== 1 ? "s" : ""}`}
         action={
-          <MemberForm trigger={<Button>+ Nouveau membre</Button>} />
+          isAdmin ? (
+            <MemberForm
+              trigger={<Button>+ Nouveau membre</Button>}
+              onSuccess={loadMembers}
+            />
+          ) : undefined
         }
       />
+
+      {!isAdmin && (
+        <div className="mb-4 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          Seul un administrateur peut ajouter ou supprimer des membres.
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -52,13 +87,43 @@ export default function TeamPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {members.map((member) => (
-            <MemberForm
-              key={member.id}
-              trigger={<MemberCard member={member} />}
-              member={member}
-            />
-          ))}
+          {members.map((member) => {
+            const isSelf = currentUser?.id === member.id;
+            const canEdit = isAdmin || isSelf;
+            const canDelete = isAdmin && !isSelf;
+
+            return (
+              <div key={member.id} className="relative group">
+                {canEdit ? (
+                  <MemberForm
+                    trigger={<MemberCard member={member} />}
+                    member={member}
+                    onSuccess={loadMembers}
+                    isAdmin={isAdmin}
+                  />
+                ) : (
+                  <MemberCard member={member} />
+                )}
+
+                {/* Delete button — admin only, cannot delete self */}
+                {canDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(member.id, member.name);
+                    }}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity
+                      h-7 w-7 flex items-center justify-center rounded-full
+                      bg-destructive/10 text-destructive hover:bg-destructive/20
+                      border border-destructive/20"
+                    title={`Supprimer ${member.name}`}
+                  >
+                    <span className="text-sm">✕</span>
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

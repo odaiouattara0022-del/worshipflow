@@ -1,0 +1,472 @@
+{
+  "elements": [
+    {
+      "element": {
+        "uuid": {
+          "string": "326ee5b9-a6f2-4772-820e-bee7b6184572"
+        },
+        "bounds": {
+          "origin": {
+            "x": 240,
+            "y": 436.5087890625
+          },
+          "size": {
+            "width": 1440,
+            "height": 206.982421875
+          }
+        },
+        "opacity": 1,
+        "path": {
+          "closed": true,
+          "points": [
+            {
+              "point": {},
+              "q0": {},
+              "q1": {}
+            },
+            {
+              "point": {
+                "x": 1
+              },
+              "q0": {
+                "x": 1
+              },
+              "q1": {
+                "x": 1
+              }
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 1
+              },
+              "q0": {
+                "x": 1,
+                "y": 1
+              },
+              "q1": {
+                "x": 1,
+                "y": 1
+              }
+            },
+            {
+              "point": {
+                "y": 1
+              },
+              "q0": {
+                "y": 1
+              },
+              "q1": {
+                "y": 1
+              }
+            }
+          ],
+          "shape": {
+            "type": 1
+          }
+        },
+        "fill": {
+          "color": {
+            "red": 0.11764705926179886,
+            "green": 0.5647059082984924,
+            "blue": 1,
+            "alpha": 1
+          }
+        },
+        "stroke": {
+          "width": 3,
+          "color": {
+            "red": 1,
+            "green": 1,
+            "blue": 1,
+            "alpha": 1
+          }
+        },
+        "shadow": {
+          "angle": 315,
+          "offset": 5,
+          "radius": 5,
+          "color": {
+            "alpha": 1
+          },
+          "opacity": 0.75
+        },
+        "feather": {
+          "radius": 0.05
+        },
+        "text": {
+          "attributes": {
+            "font": {
+              "name": "ArialMT",
+              "size": 50,
+              "family": "Arial",
+              "face": "Regular"
+            },
+            "textSolidFill": {
+              "red": 1,
+              "green": 1,
+              "blue": 1,
+              "alpha": 1
+            },
+            "paragraphStyle": {
+              "alignment": 2,
+              "lineHeightMultiple": 1,
+              "textList": {}
+            },
+            "strokeColor": {
+              "red": 1,
+              "green": 1,
+              "blue": 1,
+              "alpha": 1
+            }
+          },
+          "shadow": {
+            "angle": 315,
+            "offset": 5,
+            "radius": 5,
+            "color": {
+              "alpha": 1
+            },
+            "opacity": 0.75
+          },
+          "rtfData": "e1xydGYwXGFuc2lcYW5zaWNwZzEyNTJ7XGZvbnR0YmxcZjBcZm5pbCBBcmlhbE1UO317XGNvbG9ydGJsO1xyZWQyNTVcZ3JlZW4yNTVcYmx1ZTI1NTtccmVkMjU1XGdyZWVuMjU1XGJsdWUyNTU7fXtcKlxleHBhbmRlZGNvbG9ydGJsO1xjc2dlbmVyaWNyZ2JcYzEwMDAwMFxjMTAwMDAwXGMxMDAwMDBcYzEwMDAwMDtcY3NnZW5lcmljcmdiXGMxMDAwMDBcYzEwMDAwMFxjMTAwMDAwXGMwO317XCpcbGlzdHRhYmxlfXtcKlxsaXN0b3ZlcnJpZGV0YWJsZX1cdWMxXHBhcGVydzI4ODAwXG1hcmdsMFxtYXJncjBcbWFyZ3QwXG1hcmdiMFxwYXJkXGxpMFxmaTBccmkwXHFjXHNiMFxzYTBcc2wxOTJcc2xtdWx0MVxzbGxlYWRpbmcwXGYwXGJcaTBcdWwwXHN0cmlrZTBcZnMyMDBcZXhwbmQwXGV4cG5kdHcwXENvY29hTGlnYXR1cmUxXGNmMVxzdHJva2V3aWR0aDBcc3Ryb2tlYzFcbm9zdXBlcnN1Ylx1bGMwXGhpZ2hsaWdodDJcY2IyIEpcdTIzMyA/c3VzIGVzdCBsZSBjaGVtaW5ccGFyXHBhcmRcbGkwXGZpMFxyaTBccWNcc2IwXHNhMFxzbDE5MlxzbG11bHQxXHNsbGVhZGluZzBcZjBcYlxpMFx1bDBcc3RyaWtlMFxmczIwMFxleHBuZDBcZXhwbmR0dzBcQ29jb2FMaWdhdHVyZTFcY2YxXHN0cm9rZXdpZHRoMFxzdHJva2VjMVxub3N1cGVyc3ViXHVsYzBcaGlnaGxpZ2h0MlxjYjIgTGEgdlx1MjMzID9yaXRcdTIzMyA/IGV0IGxhIHZpZX0=",
+          "verticalAlignment": 1,
+          "scaleBehavior": 1,
+          "margins": {},
+          "isSuperscriptStandardized": true,
+          "transformDelimiter": "  •  ",
+          "chordPro": {
+            "color": {
+              "alpha": 1
+            }
+          }
+        },
+        "textLineMask": {}
+      },
+      "info": 3,
+      "textScroller": {
+        "scrollRate": 0.5,
+        "shouldRepeat": true,
+        "repeatDistance": 0.05
+      }
+    },
+    {
+      "element": {
+        "uuid": {
+          "string": "6b67ee91-24a7-41d0-b8ff-73466de56fbb"
+        },
+        "bounds": {
+          "origin": {},
+          "size": {
+            "width": 1920,
+            "height": 1080
+          }
+        },
+        "opacity": 1,
+        "path": {
+          "closed": true,
+          "points": [
+            {
+              "point": {},
+              "q0": {},
+              "q1": {}
+            },
+            {
+              "point": {
+                "x": 1
+              },
+              "q0": {
+                "x": 1
+              },
+              "q1": {
+                "x": 1
+              }
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 1
+              },
+              "q0": {
+                "x": 1,
+                "y": 1
+              },
+              "q1": {
+                "x": 1,
+                "y": 1
+              }
+            },
+            {
+              "point": {
+                "y": 1
+              },
+              "q0": {
+                "y": 1
+              },
+              "q1": {
+                "y": 1
+              }
+            }
+          ],
+          "shape": {
+            "type": 1
+          }
+        },
+        "fill": {
+          "color": {
+            "red": 0.11764705926179886,
+            "green": 0.5647059082984924,
+            "blue": 1,
+            "alpha": 1
+          }
+        },
+        "stroke": {
+          "color": {
+            "red": 1,
+            "green": 1,
+            "blue": 1,
+            "alpha": 1
+          }
+        },
+        "shadow": {
+          "color": {
+            "alpha": 1
+          }
+        },
+        "feather": {},
+        "text": {
+          "attributes": {
+            "font": {
+              "name": "ArialMT",
+              "size": 50,
+              "family": "Arial",
+              "face": "Regular"
+            },
+            "textSolidFill": {
+              "alpha": 1
+            },
+            "paragraphStyle": {
+              "alignment": 2,
+              "lineHeightMultiple": 1,
+              "textList": {}
+            },
+            "strokeColor": {
+              "red": 1,
+              "green": 1,
+              "blue": 1,
+              "alpha": 1
+            }
+          },
+          "shadow": {
+            "angle": 315,
+            "offset": 5,
+            "radius": 5,
+            "color": {
+              "alpha": 1
+            },
+            "opacity": 0.75
+          },
+          "rtfData": "e1xydGYwXGFuc2lcYW5zaWNwZzEyNTJ7XGZvbnR0YmxcZjBcZm5pbCBBcmlhbE1UO317XGNvbG9ydGJsO1xyZWQwXGdyZWVuMFxibHVlMDtccmVkMjU1XGdyZWVuMjU1XGJsdWUyNTU7XHJlZDI1NVxncmVlbjI1NVxibHVlMjU1O317XCpcZXhwYW5kZWRjb2xvcnRibDtcY3NnZW5lcmljcmdiXGMwXGMwXGMwXGMxMDAwMDA7XGNzZ2VuZXJpY3JnYlxjMTAwMDAwXGMxMDAwMDBcYzEwMDAwMFxjMTAwMDAwO1xjc2dlbmVyaWNyZ2JcYzEwMDAwMFxjMTAwMDAwXGMxMDAwMDBcYzA7fXtcKlxsaXN0dGFibGV9e1wqXGxpc3RvdmVycmlkZXRhYmxlfVx1YzFccGFwZXJ3Mjg4MDBcbWFyZ2wwXG1hcmdyMFxtYXJndDBcbWFyZ2IwXHBhcmRcbGkwXGZpMFxyaTBccWNcc2IwXHNhMFxzbDI0MFxzbG11bHQxXHNsbGVhZGluZzBcZjBcYjBcaTBcdWwwXHN0cmlrZTBcZnMxMDBcZXhwbmQwXGV4cG5kdHcwXENvY29hTGlnYXR1cmUxXGNmMVxzdHJva2V3aWR0aDBcc3Ryb2tlYzJcbm9zdXBlcnN1Ylx1bGMwXGhpZ2hsaWdodDNcY2IzfQ==",
+          "verticalAlignment": 1,
+          "margins": {},
+          "isSuperscriptStandardized": true,
+          "transformDelimiter": "  •  ",
+          "chordPro": {
+            "color": {
+              "alpha": 1
+            }
+          }
+        },
+        "textLineMask": {}
+      },
+      "textScroller": {
+        "scrollRate": 0.5,
+        "shouldRepeat": true,
+        "repeatDistance": 0.052083333333333336
+      }
+    },
+    {
+      "element": {
+        "uuid": {
+          "string": "dd59132d-871b-49fb-97e7-08a50c7563a1"
+        },
+        "bounds": {
+          "origin": {},
+          "size": {
+            "width": 1920,
+            "height": 1080
+          }
+        },
+        "opacity": 1,
+        "path": {
+          "closed": true,
+          "points": [
+            {
+              "point": {},
+              "q0": {},
+              "q1": {}
+            },
+            {
+              "point": {
+                "x": 1
+              },
+              "q0": {
+                "x": 1
+              },
+              "q1": {
+                "x": 1
+              }
+            },
+            {
+              "point": {
+                "x": 1,
+                "y": 1
+              },
+              "q0": {
+                "x": 1,
+                "y": 1
+              },
+              "q1": {
+                "x": 1,
+                "y": 1
+              }
+            },
+            {
+              "point": {
+                "y": 1
+              },
+              "q0": {
+                "y": 1
+              },
+              "q1": {
+                "y": 1
+              }
+            }
+          ],
+          "shape": {
+            "type": 1
+          }
+        },
+        "fill": {
+          "media": {
+            "uuid": {
+              "string": "c58be831-58e1-450f-8455-df4c875bea35"
+            },
+            "url": {
+              "absoluteString": "C:\\Users\\HP\\Documents\\ProPresenter\\Media\\Assets\\0c377484-9fc9-4034-a278-4828595645e5Fichier 1.png",
+              "platform": 2,
+              "local": {
+                "root": 10,
+                "path": "Media/Assets/0c377484-9fc9-4034-a278-4828595645e5Fichier 1.png"
+              }
+            },
+            "metadata": {
+              "format": "png"
+            },
+            "image": {
+              "drawing": {
+                "naturalSize": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "customImageBounds": {
+                  "origin": {
+                    "y": 414.3032159264931
+                  },
+                  "size": {
+                    "width": 1920,
+                    "height": 251.39356814701378
+                  }
+                },
+                "cropInsets": {},
+                "alphaType": 1
+              },
+              "file": {
+                "localUrl": {
+                  "absoluteString": "C:\\Users\\HP\\Documents\\ProPresenter\\Media\\Assets\\0c377484-9fc9-4034-a278-4828595645e5Fichier 1.png",
+                  "platform": 2,
+                  "local": {
+                    "root": 10,
+                    "path": "Media/Assets/0c377484-9fc9-4034-a278-4828595645e5Fichier 1.png"
+                  }
+                }
+              }
+            }
+          },
+          "enable": true
+        },
+        "stroke": {
+          "color": {
+            "red": 1,
+            "green": 1,
+            "blue": 1,
+            "alpha": 1
+          }
+        },
+        "shadow": {
+          "color": {
+            "alpha": 1
+          }
+        },
+        "feather": {},
+        "text": {
+          "attributes": {
+            "font": {
+              "name": "ArialMT",
+              "size": 50,
+              "family": "Arial",
+              "face": "Regular"
+            },
+            "textSolidFill": {
+              "alpha": 1
+            },
+            "paragraphStyle": {
+              "alignment": 2,
+              "lineHeightMultiple": 1,
+              "textList": {}
+            },
+            "strokeColor": {
+              "red": 1,
+              "green": 1,
+              "blue": 1,
+              "alpha": 1
+            }
+          },
+          "shadow": {
+            "angle": 315,
+            "offset": 5,
+            "radius": 5,
+            "color": {
+              "alpha": 1
+            },
+            "opacity": 0.75
+          },
+          "rtfData": "e1xydGYwXGFuc2lcYW5zaWNwZzEyNTJ7XGZvbnR0YmxcZjBcZm5pbCBBcmlhbE1UO317XGNvbG9ydGJsO1xyZWQwXGdyZWVuMFxibHVlMDtccmVkMjU1XGdyZWVuMjU1XGJsdWUyNTU7XHJlZDI1NVxncmVlbjI1NVxibHVlMjU1O317XCpcZXhwYW5kZWRjb2xvcnRibDtcY3NnZW5lcmljcmdiXGMwXGMwXGMwXGMxMDAwMDA7XGNzZ2VuZXJpY3JnYlxjMTAwMDAwXGMxMDAwMDBcYzEwMDAwMFxjMTAwMDAwO1xjc2dlbmVyaWNyZ2JcYzEwMDAwMFxjMTAwMDAwXGMxMDAwMDBcYzA7fXtcKlxsaXN0dGFibGV9e1wqXGxpc3RvdmVycmlkZXRhYmxlfVx1YzFccGFwZXJ3Mjg4MDBcbWFyZ2wwXG1hcmdyMFxtYXJndDBcbWFyZ2IwXHBhcmRcbGkwXGZpMFxyaTBccWNcc2IwXHNhMFxzbDI0MFxzbG11bHQxXHNsbGVhZGluZzBcZjBcYjBcaTBcdWwwXHN0cmlrZTBcZnMxMDBcZXhwbmQwXGV4cG5kdHcwXENvY29hTGlnYXR1cmUxXGNmMVxzdHJva2V3aWR0aDBcc3Ryb2tlYzJcbm9zdXBlcnN1Ylx1bGMwXGhpZ2hsaWdodDNcY2IzfQ==",
+          "verticalAlignment": 1,
+          "margins": {},
+          "isSuperscriptStandardized": true,
+          "transformDelimiter": "  •  ",
+          "chordPro": {
+            "color": {
+              "alpha": 1
+            }
+          }
+        },
+        "textLineMask": {}
+      },
+      "info": 1,
+      "textScroller": {
+        "scrollRate": 0.5,
+        "shouldRepeat": true,
+        "repeatDistance": 0.052083333333333336
+      }
+    }
+  ],
+  "backgroundColor": {
+    "alpha": 1
+  },
+  "size": {
+    "width": 1920,
+    "height": 1080
+  }
+}

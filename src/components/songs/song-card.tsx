@@ -39,7 +39,20 @@ export function SongCard({ song }: SongCardProps) {
             ))}
           </div>
           <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground">
-            <span>Utilis&eacute; {song.useCount} fois</span>
+            <span>
+              Utilis&eacute; {song.useCount} fois
+              {song.lastUsedAt && (
+                <span className="ml-1 opacity-70">
+                  &middot; {(() => {
+                    const d = Math.floor((Date.now() - new Date(song.lastUsedAt).getTime()) / 86400000);
+                    if (d === 0) return "aujourd'hui";
+                    if (d < 7) return `il y a ${d}j`;
+                    if (d < 30) return `il y a ${Math.floor(d / 7)} sem.`;
+                    return `il y a ${Math.floor(d / 30)} mois`;
+                  })()}
+                </span>
+              )}
+            </span>
             {song.proPresenterPath ? (
               <Badge className="bg-green-500/10 text-green-500 border-green-500/20 text-[10px]">
                 ProPresenter

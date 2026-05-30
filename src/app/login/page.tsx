@@ -1,99 +1,79 @@
-"use client";
+export const dynamic = "force-dynamic";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
-export default function LoginPage() {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, pin }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Erreur de connexion");
-        return;
-      }
-
-      router.push("/");
-    } catch {
-      setError("Erreur de connexion au serveur");
-    } finally {
-      setLoading(false);
-    }
-  }
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">
-            &#10022; WorshipFlow
-          </CardTitle>
-          <CardDescription>
-            Connectez-vous pour continuer
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nom</Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Votre nom"
-                required
-                autoComplete="username"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pin">PIN</Label>
-              <Input
-                id="pin"
-                type="password"
-                inputMode="numeric"
-                maxLength={6}
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="Votre PIN"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
-            )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Connexion..." : "Se connecter"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", padding: "16px", background: "#09090b" }}>
+      <div style={{ width: "100%", maxWidth: "380px", background: "#18181b", borderRadius: "12px", border: "1px solid #27272a", padding: "32px 24px" }}>
+        <h1 style={{ textAlign: "center", fontSize: "24px", fontWeight: "bold", color: "#6366f1", marginBottom: "4px" }}>
+          ✦ WorshipFlow
+        </h1>
+        <p style={{ textAlign: "center", color: "#a1a1aa", marginBottom: "24px", fontSize: "14px" }}>
+          Connectez-vous
+        </p>
+
+        <form action="/api/auth/login-form" method="POST" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div>
+            <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
+              Nom
+            </label>
+            <input
+              type="text"
+              name="name"
+              required
+              placeholder="Votre nom"
+              autoComplete="username"
+              style={{ width: "100%", height: "44px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
+              PIN
+            </label>
+            <input
+              type="password"
+              name="pin"
+              required
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="••••"
+              autoComplete="current-password"
+              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "24px", textAlign: "center", letterSpacing: "0.5em", boxSizing: "border-box" }}
+            />
+          </div>
+
+          {error && (
+            <p style={{ color: "#ef4444", textAlign: "center", fontSize: "14px", margin: "0" }}>
+              {error === "invalid" ? "Nom ou PIN incorrect" : "Erreur de connexion"}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            style={{ width: "100%", height: "48px", background: "#6366f1", color: "white", border: "none", borderRadius: "8px", fontSize: "16px", fontWeight: "600", cursor: "pointer" }}
+          >
+            Se connecter
+          </button>
+        </form>
+
+        <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid #27272a", textAlign: "center" }}>
+          <p style={{ color: "#a1a1aa", fontSize: "13px", marginBottom: "8px" }}>
+            Pas encore de compte ?
+          </p>
+          <a
+            href="/register"
+            style={{ display: "block", padding: "12px", borderRadius: "8px", border: "1px solid #6366f1", textDecoration: "none", color: "#6366f1", fontWeight: "600", fontSize: "14px" }}
+          >
+            Créer un compte
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

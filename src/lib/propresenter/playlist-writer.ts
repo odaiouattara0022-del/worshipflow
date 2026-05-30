@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 export interface PlaylistItem {
   type: "song" | "media" | "header";
   title: string;
+  songTitle?: string | null;
   proPresenterPath?: string | null;
   duration: number;
   notes?: string | null;
@@ -36,7 +37,8 @@ export async function buildPlaylistManifest(
     if (item.song) {
       return {
         type: "song" as const,
-        title: item.song.title,
+        title: item.title,
+        songTitle: item.song.title,
         proPresenterPath: item.song.proPresenterPath,
         duration: item.duration,
         notes: item.notes,
