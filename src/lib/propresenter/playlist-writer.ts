@@ -16,7 +16,7 @@ export interface PlaylistManifest {
 }
 
 /**
- * Build a playlist manifest from a WorshipFlow service.
+ * Build a playlist manifest from a ProSendWorship service.
  * Items with a linked song use the song's proPresenterPath.
  * Other items become headers or media placeholders.
  */
@@ -53,7 +53,7 @@ export async function buildPlaylistManifest(
   });
 
   return {
-    name: `WorshipFlow — ${service.title}`,
+    name: `ProSendWorship — ${service.title}`,
     date: service.date.toISOString().slice(0, 10),
     items,
   };

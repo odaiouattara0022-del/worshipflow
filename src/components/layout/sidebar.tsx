@@ -50,7 +50,7 @@ export function Sidebar() {
     <>
       <div className="p-4 border-b border-border flex items-center justify-between">
         <div>
-          <div className="text-primary font-bold text-lg">✦ WorshipFlow</div>
+          <div className="text-primary font-bold text-lg">✦ ProSendWorship</div>
           <div className="text-muted-foreground text-xs mt-1">Église Elements Com</div>
         </div>
         {/* Close button on mobile */}
@@ -110,7 +110,7 @@ export function Sidebar() {
         >
           ☰
         </button>
-        <span className="text-primary font-bold text-lg">✦ WorshipFlow</span>
+        <span className="text-primary font-bold text-lg">✦ ProSendWorship</span>
       </div>
 
       {/* Mobile overlay */}

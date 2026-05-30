@@ -82,7 +82,7 @@ export async function POST() {
             `Rappel : ${service.title} dans ${daysBefore} jour${daysBefore > 1 ? "s" : ""}`,
             `<p>Bonjour ${assignment.user.name},</p>
              <p>${message.replace(` [${reminderKey}]`, "")}</p>
-             <p>— WorshipFlow</p>`
+             <p>— ProSendWorship</p>`
           );
         }
 

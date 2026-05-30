@@ -70,7 +70,7 @@ export function LoginForm({ members }: { members: TeamMember[] }) {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">
-            &#10022; WorshipFlow
+            &#10022; ProSendWorship
           </CardTitle>
           <CardDescription>
             {selectedMember

@@ -47,7 +47,7 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* WorshipFlow custom colors */
+  /* ProSendWorship custom colors */
   --color-song: oklch(0.55 0.18 270);
   --color-prayer: oklch(0.7 0.15 85);
   --color-sermon: oklch(0.6 0.2 25);

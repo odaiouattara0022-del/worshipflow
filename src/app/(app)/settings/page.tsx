@@ -88,7 +88,7 @@ export default function SettingsPage() {
     <div>
       <Header
         title="Paramètres"
-        subtitle="Configuration de WorshipFlow"
+        subtitle="Configuration de ProSendWorship"
         action={
           <Button onClick={handleSave} disabled={saving}>
             {saving ? "Enregistrement…" : "Enregistrer"}

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WorshipFlow",
+  title: "ProSendWorship",
   description: "Planification de cultes intégrée à ProPresenter",
 };
 

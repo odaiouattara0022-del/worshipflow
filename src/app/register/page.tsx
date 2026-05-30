@@ -19,7 +19,7 @@ export default async function RegisterPage({
     <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", padding: "16px", background: "#09090b" }}>
       <div style={{ width: "100%", maxWidth: "380px", background: "#18181b", borderRadius: "12px", border: "1px solid #27272a", padding: "32px 24px" }}>
         <h1 style={{ textAlign: "center", fontSize: "24px", fontWeight: "bold", color: "#6366f1", marginBottom: "4px" }}>
-          ✦ WorshipFlow
+          ✦ ProSendWorship
         </h1>
         <p style={{ textAlign: "center", color: "#a1a1aa", marginBottom: "24px", fontSize: "14px" }}>
           Créer un compte
