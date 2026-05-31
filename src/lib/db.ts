@@ -5,11 +5,11 @@ import pg from "pg";
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient() {
-  // Use individual params to avoid URL parsing issues with Supabase pooler
+  // Direct connection to Supabase PostgreSQL (IPv6 supported on Vercel)
   const pool = new pg.Pool({
-    host: process.env.DB_HOST || "aws-0-eu-west-2.pooler.supabase.com",
-    port: parseInt(process.env.DB_PORT || "6543"),
-    user: process.env.DB_USER || "postgres.plmduabtivmideutigkk",
+    host: process.env.DB_HOST || "db.plmduabtivmideutigkk.supabase.co",
+    port: parseInt(process.env.DB_PORT || "5432"),
+    user: process.env.DB_USER || "postgres",
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "postgres",
     ssl: { rejectUnauthorized: false },
