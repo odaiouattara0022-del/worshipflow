@@ -5,12 +5,15 @@ import pg from "pg";
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL!;
+  // Use individual params to avoid URL parsing issues with Supabase pooler
   const pool = new pg.Pool({
-    connectionString,
-    // Disable prepared statements for Supabase transaction-mode pooler (port 6543)
-    prepare: false,
-  } as pg.PoolConfig);
+    host: process.env.DB_HOST || "aws-0-eu-west-3.pooler.supabase.com",
+    port: parseInt(process.env.DB_PORT || "6543"),
+    user: process.env.DB_USER || "postgres.plmduabtivmideutigkk",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "postgres",
+    ssl: { rejectUnauthorized: false },
+  });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
