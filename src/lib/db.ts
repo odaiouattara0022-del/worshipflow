@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 function createPrismaClient() {
   // Use individual params to avoid URL parsing issues with Supabase pooler
   const pool = new pg.Pool({
-    host: process.env.DB_HOST || "aws-0-eu-west-3.pooler.supabase.com",
+    host: process.env.DB_HOST || "aws-0-eu-west-2.pooler.supabase.com",
     port: parseInt(process.env.DB_PORT || "6543"),
     user: process.env.DB_USER || "postgres.plmduabtivmideutigkk",
     password: process.env.DB_PASSWORD || "",
