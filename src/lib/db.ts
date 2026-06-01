@@ -13,7 +13,7 @@ function createPrismaClient(): PrismaClient {
     user: "postgres.plmduabtivmideutigkk",
     password: process.env.DB_PASSWORD,
     database: "postgres",
-    ssl: { rejectUnauthorized: false },
+    ssl: false,
     max: 2,
   });
   const adapter = new PrismaPg(pool);
