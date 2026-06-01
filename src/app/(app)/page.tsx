@@ -84,7 +84,7 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {upcomingServices.map((s) => (
+            {upcomingServices.map((s: any) => (
               <UpcomingService
                 key={s.id}
                 id={s.id}

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       select: { id: true, name: true, pin: true, role: true },
     });
     const user = allUsers.find(
-      (u) => u.name.toLowerCase() === trimmedName.toLowerCase()
+      (u: any) => u.name.toLowerCase() === trimmedName.toLowerCase()
     );
 
     if (!user) {

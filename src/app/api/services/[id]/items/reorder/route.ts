@@ -21,7 +21,7 @@ export async function PUT(
     where: { serviceId: id },
     select: { id: true },
   });
-  const existingIds = new Set(existingItems.map((i) => i.id));
+  const existingIds = new Set(existingItems.map((i: any) => i.id as string));
   const invalid = orderedIds.filter((oid) => !existingIds.has(oid));
   if (invalid.length > 0) {
     return NextResponse.json(

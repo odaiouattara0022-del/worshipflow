@@ -31,7 +31,7 @@ export async function POST(
       notes: original.notes,
       templateId: original.templateId,
       items: {
-        create: original.items.map((item) => ({
+        create: original.items.map((item: any) => ({
           type: item.type,
           title: item.title,
           order: item.order,

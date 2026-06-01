@@ -33,7 +33,7 @@ export async function buildPlaylistManifest(
     },
   });
 
-  const items: PlaylistItem[] = service.items.map((item) => {
+  const items: PlaylistItem[] = service.items.map((item: any) => {
     if (item.song) {
       return {
         type: "song" as const,

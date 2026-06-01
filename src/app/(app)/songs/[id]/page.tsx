@@ -49,7 +49,7 @@ export default async function SongDetailPage({ params }: { params: Promise<{ id:
           {song.defaultKey}
         </Badge>
         {song.tempo && <Badge variant="secondary">{song.tempo} BPM</Badge>}
-        {tags.map((tag) => (
+        {tags.map((tag: string) => (
           <Badge key={tag} variant="secondary">{tag.trim()}</Badge>
         ))}
         {song.proPresenterPath ? (
@@ -147,7 +147,7 @@ export default async function SongDetailPage({ params }: { params: Promise<{ id:
               {song.arrangements.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Aucun arrangement</p>
               ) : (
-                song.arrangements.map((arr) => (
+                song.arrangements.map((arr: any) => (
                   <div key={arr.id} className="border border-border rounded-md p-3">
                     <div className="flex justify-between">
                       <span className="font-medium text-sm">{arr.name}</span>
@@ -186,7 +186,7 @@ export default async function SongDetailPage({ params }: { params: Promise<{ id:
               </div>
               {song.serviceItems.length > 0 ? (
                 <div className="space-y-1.5">
-                  {song.serviceItems.map((item) => (
+                  {song.serviceItems.map((item: any) => (
                     <a
                       key={item.id}
                       href={`/services/${item.service.id}`}

@@ -60,7 +60,7 @@ export async function notifyServiceTeam(
     select: { userId: true },
   });
 
-  const uniqueUserIds = [...new Set(assignments.map((a) => a.userId))];
+  const uniqueUserIds = Array.from(new Set<string>(assignments.map((a: any) => a.userId as string)));
 
   return createBulkNotifications(
     uniqueUserIds.map((userId) => ({ userId, type, message }))

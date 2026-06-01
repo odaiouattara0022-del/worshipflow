@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     select: { name: true },
   });
   const exists = allUsers.some(
-    (u) => u.name.toLowerCase() === name.toLowerCase()
+    (u: any) => u.name.toLowerCase() === name.toLowerCase()
   );
 
   if (exists) {

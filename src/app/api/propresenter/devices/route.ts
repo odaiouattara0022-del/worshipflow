@@ -12,7 +12,7 @@ export async function GET() {
 
   // Check online status for each device in parallel
   const devicesWithStatus = await Promise.all(
-    devices.map(async (device) => {
+    devices.map(async (device: any) => {
       let online = false;
       let version: string | null = null;
       try {

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   if (format === "text") {
     const text = songs
-      .map((s) => {
+      .map((s: any) => {
         const header = [s.title, s.author || ""].filter(Boolean).join("\n");
         return `${header}\n${s.lyrics}`;
       })
