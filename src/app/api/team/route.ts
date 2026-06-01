@@ -3,15 +3,9 @@ import { prisma } from "@/lib/db";
 import { hashPin, requireAdmin } from "@/lib/auth";
 
 export async function GET() {
+  // Public endpoint used on login page — only expose non-sensitive fields
   const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      avatar: true,
-    },
+    select: { id: true, name: true, role: true, avatar: true },
     orderBy: { name: "asc" },
   });
 

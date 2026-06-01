@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { verifyPin, createSession } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 
@@ -7,6 +8,12 @@ import { NextResponse } from "next/server";
  * POST /api/auth/login-form — HTML form-based login (no JS needed).
  */
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(`login-form:${ip}`, 10, 5 * 60 * 1000);
+  if (!rl.allowed) {
+    redirect(`/login?error=ratelimit`);
+  }
+
   let formData;
   try {
     formData = await request.formData();
