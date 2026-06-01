@@ -5,8 +5,20 @@ import { Pool } from "pg";
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient(): PrismaClient {
+  // DB_PASSWORD overrides any password embedded in DATABASE_URL.
+  // This allows the password to be rotated in Vercel without updating DATABASE_URL.
+  let connectionString = process.env.DATABASE_URL!;
+  if (process.env.DB_PASSWORD) {
+    try {
+      const url = new URL(connectionString);
+      url.password = encodeURIComponent(process.env.DB_PASSWORD);
+      connectionString = url.toString();
+    } catch {
+      // malformed DATABASE_URL — fall back to original
+    }
+  }
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
     max: 3,
     ssl: { rejectUnauthorized: false },
   });
