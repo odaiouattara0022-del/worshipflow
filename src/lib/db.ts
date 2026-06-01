@@ -11,12 +11,16 @@ function createPrismaClient(): PrismaClient {
   if (process.env.DB_PASSWORD) {
     try {
       const url = new URL(connectionString);
-      url.password = encodeURIComponent(process.env.DB_PASSWORD);
+      url.password = process.env.DB_PASSWORD;
       connectionString = url.toString();
     } catch {
       // malformed DATABASE_URL — fall back to original
     }
   }
+  try {
+    const u = new URL(connectionString);
+    console.log(`[db] connecting: ${u.username}@${u.hostname}:${u.port}${u.pathname} pw_override=${!!process.env.DB_PASSWORD}`);
+  } catch { /* ignore */ }
   const pool = new Pool({
     connectionString,
     max: 3,
