@@ -4,26 +4,25 @@ import { Pool } from "pg";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-function createPrismaClient(): PrismaClient {
-  // DB_PASSWORD overrides any password embedded in DATABASE_URL.
-  // This allows the password to be rotated in Vercel without updating DATABASE_URL.
-  let connectionString = process.env.DATABASE_URL!;
+function buildConnectionString(): string {
+  // Prefer DIRECT_URL (bypasses pooler), fall back to DATABASE_URL.
+  const base = process.env.DIRECT_URL || process.env.DATABASE_URL!;
+  // DB_PASSWORD overrides the password embedded in the URL (handles password rotations).
   if (process.env.DB_PASSWORD) {
     try {
-      const url = new URL(connectionString);
+      const url = new URL(base);
       url.password = process.env.DB_PASSWORD;
-      connectionString = url.toString();
-    } catch {
-      // malformed DATABASE_URL — fall back to original
-    }
+      return url.toString();
+    } catch { /* ignore */ }
   }
-  try {
-    const u = new URL(connectionString);
-    console.log(`[db] connecting: ${u.username}@${u.hostname}:${u.port}${u.pathname} pw_override=${!!process.env.DB_PASSWORD}`);
-  } catch { /* ignore */ }
+  return base;
+}
+
+function createPrismaClient(): PrismaClient {
+  const connectionString = buildConnectionString();
   const pool = new Pool({
     connectionString,
-    max: 3,
+    max: 2,
     ssl: { rejectUnauthorized: false },
   });
   const adapter = new PrismaPg(pool);
