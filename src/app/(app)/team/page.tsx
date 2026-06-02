@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { MemberCard } from "@/components/team/member-card";
 import { MemberForm } from "@/components/team/member-form";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { toast } from "sonner";
 
@@ -21,6 +22,7 @@ export default function TeamPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const { user: currentUser, isAdmin } = useCurrentUser();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   function loadMembers() {
     fetch("/api/team")
@@ -37,7 +39,11 @@ export default function TeamPage() {
   }, []);
 
   async function handleDelete(memberId: string, memberName: string) {
-    if (!confirm(`Supprimer ${memberName} de l'équipe ?`)) return;
+    const ok = await confirm({
+      title: "Supprimer le membre",
+      description: `Êtes-vous sûr de vouloir supprimer ${memberName} de l'équipe ? Cette action est irréversible.`,
+    });
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/team/${memberId}`, { method: "DELETE" });
@@ -126,6 +132,7 @@ export default function TeamPage() {
           })}
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 }

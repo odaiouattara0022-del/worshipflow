@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { DeviceManager } from "@/components/propresenter/device-selector";
 import { MemberForm } from "@/components/team/member-form";
@@ -118,6 +119,7 @@ export default function SettingsPage() {
   const fileInputRef                  = useRef<HTMLInputElement>(null);
   const { user, isAdmin: isAppAdmin }  = useCurrentUser();
   const u = user as any;
+  const { confirm, ConfirmDialog } = useConfirm();
   // Admin = app-level ADMIN  OR  church OWNER/ADMIN
   const isAdmin = isAppAdmin || ["OWNER", "ADMIN"].includes(u?.churchRole ?? "");
 
@@ -192,7 +194,11 @@ export default function SettingsPage() {
   }
 
   async function handleDeleteTemplate(id: string, name: string) {
-    if (!confirm(`Supprimer le modèle « ${name} » ?`)) return;
+    const ok = await confirm({
+      title: "Supprimer le modèle",
+      description: `Êtes-vous sûr de vouloir supprimer le modèle « ${name} » ? Cette action est irréversible.`,
+    });
+    if (!ok) return;
     await fetch(`/api/templates/${id}`, { method: "DELETE" });
     toast.success("Modèle supprimé"); loadTemplates();
   }
@@ -759,6 +765,7 @@ export default function SettingsPage() {
           </div>
         </DialogContent>
       </Dialog>
+      {ConfirmDialog}
     </div>
   );
 }
