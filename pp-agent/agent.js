@@ -43,9 +43,14 @@ async function runSetup() {
 }
 
 // ── Agent loop ───────────────────────────────────────────────────────────────
-const POLL_MS  = 500;
-const MAX_BACK = 30_000;
-const HB_EVERY = 60;
+// The server long-polls: it holds /poll open for ~8s and answers the instant a
+// command appears. So we don't poll tightly — POLL_MS is only a safety floor to
+// avoid a hot loop if the server ever answers immediately. The fetch timeout
+// must sit safely above the server's 8s hold.
+const POLL_MS   = 250;
+const FETCH_TIMEOUT_MS = 15_000;
+const MAX_BACK  = 30_000;
+const HB_EVERY  = 60;
 
 let errors = 0, polls = 0;
 
@@ -76,7 +81,7 @@ async function poll(config, dispatch) {
   try {
     const res = await fetch(`${serverUrl}/api/pp-bridge/poll`, {
       headers: { Authorization: `Bearer ${agentToken}` },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (res.status === 401) {
       console.error("\n❌  Token invalide. Supprimez pp-agent-config.json et relancez l'agent.");

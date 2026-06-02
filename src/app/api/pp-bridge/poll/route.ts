@@ -2,8 +2,14 @@
  * GET /api/pp-bridge/poll
  *
  * Long-poll endpoint for the local agent.
- * The agent calls this every ~500 ms to fetch the next PENDING command.
- * Also updates agentOnline / agentLastSeen as a heartbeat.
+ * The agent opens one request and the server HOLDS it open until either a
+ * PENDING command appears (returned instantly) or HOLD_MS elapses. The agent
+ * then immediately re-opens the request. This replaces tight 500ms polling:
+ *   - command latency drops to ~one DB check (~100ms) instead of ~1s
+ *   - an idle agent makes ~1 request per HOLD_MS instead of ~2 per second
+ *
+ * HOLD_MS (8s) is kept safely under the agent's request timeout (10s) so that
+ * already-deployed agents benefit without needing to be rebuilt/redistributed.
  *
  * Auth: Authorization: Bearer <agentToken>
  * Returns: { command: PPCommand } | { command: null }
@@ -13,13 +19,34 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { resolveDevice } from "../_auth";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 30; // allow the held connection (harmless if plan caps lower)
+
+const HOLD_MS = 8_000;   // how long to hold the connection open when idle
+const CHECK_MS = 500;    // how often to re-check the queue while holding
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function findPending(deviceId: string) {
+  return prisma.ppCommand.findFirst({
+    where: {
+      deviceId,
+      status: "PENDING",
+      expiresAt: { gt: new Date().toISOString() },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 export async function GET(request: NextRequest) {
   const device = await resolveDevice(request);
   if (!device) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  // Heartbeat
+  // Heartbeat — mark the agent online for this connection cycle
   await prisma.ppDevice.update({
     where: { id: device.id },
     data: {
@@ -28,15 +55,18 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  // Fetch one PENDING command for this device, oldest first
-  const command = await prisma.ppCommand.findFirst({
-    where: {
-      deviceId: device.id,
-      status: "PENDING",
-      expiresAt: { gt: new Date().toISOString() },
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  // Fast path: a command is already waiting
+  let command = await findPending(device.id);
+  if (command) return NextResponse.json({ command });
 
-  return NextResponse.json({ command: command ?? null });
+  // Hold the connection open, checking periodically, until a command arrives
+  // or HOLD_MS elapses. Abort early if the client disconnects.
+  const deadline = Date.now() + HOLD_MS;
+  while (Date.now() < deadline && !request.signal.aborted) {
+    await sleep(CHECK_MS);
+    command = await findPending(device.id);
+    if (command) return NextResponse.json({ command });
+  }
+
+  return NextResponse.json({ command: null });
 }
