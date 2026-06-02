@@ -70,11 +70,22 @@ export default function CalendarPage() {
   const [services, setServices] = useState<ServiceSummary[]>([]);
 
   // New service modal state
-  const [modalDay, setModalDay] = useState<Date | null>(null);
-  const [newTitle, setNewTitle] = useState("");
-  const [newType, setNewType] = useState("SUNDAY_MORNING");
-  const [newTime, setNewTime] = useState("10:00");
-  const [creating, setCreating] = useState(false);
+  const [modalDay, setModalDay]   = useState<Date | null>(null);
+  const [newTitle, setNewTitle]   = useState("");
+  const [newType, setNewType]     = useState("SUNDAY_MORNING");
+  const [newTime, setNewTime]     = useState("10:00");
+  const [creating, setCreating]   = useState(false);
+
+  // Load default time + type from settings
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(s => {
+        if (s.defaultServiceTime) setNewTime(s.defaultServiceTime);
+        if (s.defaultServiceType) setNewType(s.defaultServiceType);
+      })
+      .catch(() => {});
+  }, []);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();

@@ -107,9 +107,7 @@ export default async function RegisterPage({
             </form>
 
             <div className="mt-4 pt-4 border-t border-border text-center">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">← Déjà un compte ? Se connecter</Link>
-              </Button>
+              <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Déjà un compte ? Se connecter</Link>
             </div>
           </CardContent>
         </Card>

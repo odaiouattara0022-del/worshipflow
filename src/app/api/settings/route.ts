@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireSession, applyRateLimit } from "@/lib/security";
 
 export async function GET() {
+  try { await requireSession(); } catch (e) { return e as Response; }
   const settings = await prisma.appSettings.findMany();
   const map: Record<string, string> = {};
   for (const s of settings as any[]) {
@@ -11,6 +13,10 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  try { await requireSession(); } catch (e) { return e as Response; }
+  const rl = applyRateLimit(request, "settings.update", 20, 60_000);
+  if (rl) return rl;
+
   const body = await request.json();
   const entries = Object.entries(body) as [string, string][];
 

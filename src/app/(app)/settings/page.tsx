@@ -22,26 +22,69 @@ interface SettingsMap { [key: string]: string; }
 interface Member { id: string; name: string; email: string | null; phone: string | null; role: string; }
 interface ServiceRole { id: string; name: string; color: string; sortOrder: number; }
 interface Church { id: string; name: string; description?: string; address?: string; website?: string; logoUrl?: string; isPublic?: boolean; }
+interface TemplateItem { type: string; title: string; duration: number; order: number; }
+interface ServiceTemplate { id: string; name: string; items: string; defaultDuration: number; _count?: { services: number }; }
 
 const DEFAULT_SETTINGS: SettingsMap = {
   churchName: "Mon Église", ccliLicense: "",
-  smtpHost: "", smtpPort: "587", smtpUser: "", smtpPass: "", smtpFrom: "",
-  reminderDays: "7,3,1",
+  smtpFrom: "", reminderDays: "7,3,1",
+  timezone: "Europe/Paris",
+  defaultServiceTime: "10:00",
+  defaultServiceType: "SUNDAY_MORNING",
 };
 
 const TABS = [
   { key: "general",      label: "Général",         icon: Settings },
   { key: "church",       label: "Profil d'église",  icon: Building2, adminOnly: true },
+  { key: "templates",    label: "Modèles",          icon: Settings, adminOnly: true },
   { key: "propresenter", label: "ProPresenter",     icon: Monitor },
   { key: "roles",        label: "Rôles de service", icon: Users, adminOnly: true },
   { key: "notifications",label: "Notifications",    icon: Bell },
-  // { key: "email", label: "Email / SMTP", icon: Bell }, // désactivé temporairement
   { key: "appearance",   label: "Apparence",        icon: Palette },
   { key: "data",         label: "Données",          icon: Download },
   { key: "reporting",    label: "CCLI",             icon: BarChart3 },
-  { key: "email",        label: "Email",            icon: Bell, adminOnly: true },
   { key: "members",      label: "Membres",          icon: Users, adminOnly: true },
   { key: "reminders",    label: "Rappels",          icon: Bell },
+];
+
+const TIMEZONES = [
+  { value: "Europe/Paris",      label: "Paris / Bruxelles (UTC+1/+2)" },
+  { value: "Europe/London",     label: "Londres (UTC+0/+1)" },
+  { value: "America/Montreal",  label: "Montréal / Québec (UTC-5/-4)" },
+  { value: "America/New_York",  label: "New York (UTC-5/-4)" },
+  { value: "America/Chicago",   label: "Chicago (UTC-6/-5)" },
+  { value: "America/Los_Angeles",label: "Los Angeles (UTC-8/-7)" },
+  { value: "Africa/Abidjan",    label: "Abidjan (UTC+0)" },
+  { value: "Africa/Kinshasa",   label: "Kinshasa (UTC+1)" },
+  { value: "Africa/Dakar",      label: "Dakar (UTC+0)" },
+  { value: "Africa/Lagos",      label: "Lagos (UTC+1)" },
+  { value: "Indian/Reunion",    label: "La Réunion (UTC+4)" },
+  { value: "Pacific/Tahiti",    label: "Tahiti (UTC-10)" },
+];
+
+const SERVICE_TYPES = [
+  { value: "SUNDAY_MORNING", label: "Culte du dimanche matin" },
+  { value: "SUNDAY_EVENING", label: "Culte du dimanche soir" },
+  { value: "MIDWEEK",        label: "Culte de semaine" },
+  { value: "SPECIAL",        label: "Événement spécial" },
+  { value: "OTHER",          label: "Autre" },
+];
+
+const ITEM_TYPES = [
+  { value: "SONG",         label: "Chant" },
+  { value: "PRAYER",       label: "Prière" },
+  { value: "SERMON",       label: "Sermon / Prédication" },
+  { value: "OFFERING",     label: "Offrande" },
+  { value: "ANNOUNCEMENT", label: "Annonce" },
+  { value: "VIDEO",        label: "Vidéo" },
+  { value: "COUNTDOWN",    label: "Compte à rebours" },
+  { value: "CUSTOM",       label: "Personnalisé" },
+];
+
+const NOTIF_EVENTS = [
+  { value: "ASSIGNMENT", label: "Assignation à un service",         desc: "Quand vous êtes assigné à un service" },
+  { value: "REMINDER",   label: "Rappels de service",               desc: "J-7, J-3, J-1 avant un service" },
+  { value: "UPDATE",     label: "Modifications d'un service",       desc: "Quand un service auquel vous participez est modifié" },
 ];
 
 const ROLE_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f59e0b","#10b981","#3b82f6","#ef4444","#14b8a6","#f97316","#84cc16"];
@@ -59,7 +102,14 @@ export default function SettingsPage() {
   const [churchForm, setChurchForm]   = useState<Partial<Church>>({});
   const [savingChurch, setSavingChurch] = useState(false);
   const [notifChannels, setNotifChannels] = useState<string[]>(["IN_APP"]);
-  const [savingNotif, setSavingNotif] = useState(false);
+  const [notifEvents, setNotifEvents]     = useState<string[]>(["ASSIGNMENT", "REMINDER"]);
+  const [savingNotif, setSavingNotif]     = useState(false);
+  const [templates, setTemplates]         = useState<ServiceTemplate[]>([]);
+  const [editingTpl, setEditingTpl]       = useState<ServiceTemplate | null>(null);
+  const [newTplName, setNewTplName]       = useState("");
+  const [newTplDuration, setNewTplDuration] = useState("90");
+  const [tplItems, setTplItems]           = useState<TemplateItem[]>([]);
+  const [savingTpl, setSavingTpl]         = useState(false);
   const [importFile, setImportFile]   = useState<File | null>(null);
   const [importing, setImporting]     = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -76,11 +126,15 @@ export default function SettingsPage() {
   function loadMembers() { fetch("/api/team").then(r => r.json()).then(setMembers).catch(() => {}); }
   function loadRoles()   { fetch("/api/service-roles").then(r => r.json()).then(setRoles).catch(() => {}); }
 
+  function loadTemplates() { fetch("/api/templates").then(r => r.json()).then(setTemplates).catch(() => {}); }
+
   useEffect(() => {
     fetch("/api/settings").then(r => r.ok ? r.json() : {}).then(d => setSettings(p => ({ ...p, ...d }))).catch(() => {});
-    loadMembers();
-    loadRoles();
-    fetch("/api/user/notifications").then(r => r.json()).then(d => { if (d.notifChannels) setNotifChannels(d.notifChannels.split(",").filter(Boolean)); }).catch(() => {});
+    loadMembers(); loadRoles(); loadTemplates();
+    fetch("/api/user/notifications").then(r => r.json()).then(d => {
+      if (d.notifChannels) setNotifChannels(d.notifChannels.split(",").filter(Boolean));
+      if (d.notifEvents)   setNotifEvents(d.notifEvents.split(",").filter(Boolean));
+    }).catch(() => {});
     if (u?.churchId) {
       fetch(`/api/churches/${u.churchId}`).then(r => r.json()).then(c => { setChurch(c); setChurchForm(c); }).catch(() => {});
     }
@@ -118,9 +172,48 @@ export default function SettingsPage() {
   async function handleSaveNotif() {
     setSavingNotif(true);
     try {
-      await fetch("/api/user/notifications", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ notifChannels: notifChannels.join(",") }) });
+      await fetch("/api/user/notifications", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ notifChannels: notifChannels.join(","), notifEvents: notifEvents.join(",") }) });
       toast.success("Préférences sauvegardées");
     } catch { toast.error("Erreur"); } finally { setSavingNotif(false); }
+  }
+
+  async function handleSaveTemplate() {
+    if (!newTplName.trim()) return;
+    setSavingTpl(true);
+    try {
+      const url = editingTpl ? `/api/templates/${editingTpl.id}` : "/api/templates";
+      const method = editingTpl ? "PUT" : "POST";
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newTplName.trim(), items: tplItems, defaultDuration: parseInt(newTplDuration) || 90 }) });
+      if (!res.ok) { toast.error("Erreur"); return; }
+      toast.success(editingTpl ? "Modèle mis à jour" : "Modèle créé");
+      setNewTplName(""); setTplItems([]); setNewTplDuration("90"); setEditingTpl(null);
+      loadTemplates();
+    } catch { toast.error("Erreur"); } finally { setSavingTpl(false); }
+  }
+
+  async function handleDeleteTemplate(id: string, name: string) {
+    if (!confirm(`Supprimer le modèle « ${name} » ?`)) return;
+    await fetch(`/api/templates/${id}`, { method: "DELETE" });
+    toast.success("Modèle supprimé"); loadTemplates();
+  }
+
+  function startEditTemplate(tpl: ServiceTemplate) {
+    setEditingTpl(tpl);
+    setNewTplName(tpl.name);
+    setNewTplDuration(String(tpl.defaultDuration));
+    setTplItems(JSON.parse(tpl.items || "[]"));
+  }
+
+  function addTplItem() {
+    setTplItems(p => [...p, { type: "SONG", title: "", duration: 5, order: p.length }]);
+  }
+
+  function updateTplItem(i: number, field: keyof TemplateItem, val: string | number) {
+    setTplItems(p => p.map((item, idx) => idx === i ? { ...item, [field]: val } : item));
+  }
+
+  function removeTplItem(i: number) {
+    setTplItems(p => p.filter((_, idx) => idx !== i).map((item, idx) => ({ ...item, order: idx })));
   }
 
   async function confirmDeleteMember() {
@@ -176,6 +269,31 @@ export default function SettingsPage() {
               <Label htmlFor="churchName">Nom de l&apos;église</Label>
               <Input id="churchName" value={settings.churchName} onChange={e => handleChange("churchName", e.target.value)} className="mt-1" />
             </div>
+            <div>
+              <Label htmlFor="timezone">Fuseau horaire</Label>
+              <select id="timezone" value={settings.timezone ?? "Europe/Paris"} onChange={e => handleChange("timezone", e.target.value)}
+                className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                {TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+              </select>
+            </div>
+          </Card>
+
+          <Card className="p-6 space-y-4">
+            <h2 className="text-sm font-semibold">Services — valeurs par défaut</h2>
+            <p className="text-xs text-muted-foreground">Ces valeurs sont pré-remplies automatiquement lors de la création d&apos;un nouveau service.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Heure par défaut</Label>
+                <Input type="time" value={settings.defaultServiceTime ?? "10:00"} onChange={e => handleChange("defaultServiceTime", e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>Type par défaut</Label>
+                <select value={settings.defaultServiceType ?? "SUNDAY_MORNING"} onChange={e => handleChange("defaultServiceType", e.target.value)}
+                  className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  {SERVICE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+            </div>
             <Button onClick={handleSave} disabled={saving} size="sm">{saving ? "Enregistrement…" : "Enregistrer"}</Button>
           </Card>
         </div>
@@ -220,6 +338,85 @@ export default function SettingsPage() {
               </p>
             )}
           </Card>
+        </div>
+      )}
+
+      {/* ── Modèles de service ───────────────────────── */}
+      {tab === "templates" && isAdmin && (
+        <div className="max-w-2xl space-y-4">
+          {/* Form create/edit */}
+          <Card className="p-6 space-y-4">
+            <h2 className="text-sm font-semibold">{editingTpl ? `Modifier « ${editingTpl.name} »` : "Nouveau modèle de service"}</h2>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2">
+                <Label className="text-xs">Nom du modèle</Label>
+                <Input value={newTplName} onChange={e => setNewTplName(e.target.value)} placeholder="ex: Culte type dominical" className="mt-1 h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs">Durée totale (min)</Label>
+                <Input type="number" value={newTplDuration} onChange={e => setNewTplDuration(e.target.value)} className="mt-1 h-9 text-sm" />
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Éléments du service</Label>
+                <button onClick={addTplItem} className="text-xs text-primary hover:underline flex items-center gap-1"><Plus className="h-3 w-3" />Ajouter</button>
+              </div>
+              {tplItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <select value={item.type} onChange={e => updateTplItem(i, "type", e.target.value)}
+                    className="h-8 rounded-md border border-input bg-background px-2 text-xs w-36 focus:outline-none">
+                    {ITEM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                  <Input value={item.title} onChange={e => updateTplItem(i, "title", e.target.value)} placeholder="Titre…" className="flex-1 h-8 text-xs" />
+                  <Input type="number" value={item.duration} onChange={e => updateTplItem(i, "duration", parseInt(e.target.value) || 5)} className="w-16 h-8 text-xs" />
+                  <span className="text-[10px] text-muted-foreground">min</span>
+                  <button onClick={() => removeTplItem(i)} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>
+                </div>
+              ))}
+              {tplItems.length === 0 && <p className="text-xs text-muted-foreground">Ajoutez les éléments qui composent ce type de service.</p>}
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSaveTemplate} disabled={savingTpl || !newTplName.trim()} size="sm">
+                {savingTpl ? "Sauvegarde…" : editingTpl ? "Mettre à jour" : "Créer le modèle"}
+              </Button>
+              {editingTpl && <Button variant="outline" size="sm" onClick={() => { setEditingTpl(null); setNewTplName(""); setTplItems([]); setNewTplDuration("90"); }}>Annuler</Button>}
+            </div>
+          </Card>
+
+          {/* Template list */}
+          {templates.length > 0 && (
+            <Card className="p-6 space-y-3">
+              <h2 className="text-sm font-semibold">Modèles existants</h2>
+              {templates.map(tpl => {
+                const items = JSON.parse(tpl.items || "[]") as TemplateItem[];
+                return (
+                  <div key={tpl.id} className="rounded-lg border border-border px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <div>
+                        <p className="text-sm font-medium">{tpl.name}</p>
+                        <p className="text-xs text-muted-foreground">{tpl.defaultDuration} min · {items.length} élément{items.length !== 1 ? "s" : ""} · utilisé {tpl._count?.services ?? 0} fois</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => startEditTemplate(tpl)} className="text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2 py-1">Modifier</button>
+                        <button onClick={() => handleDeleteTemplate(tpl.id, tpl.name)} className="text-xs text-destructive hover:underline"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
+                    {items.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {items.map((item, i) => (
+                          <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{item.title || ITEM_TYPES.find(t => t.value === item.type)?.label} ({item.duration}min)</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </Card>
+          )}
         </div>
       )}
 
@@ -271,23 +468,34 @@ export default function SettingsPage() {
       {tab === "notifications" && (
         <div className="max-w-lg space-y-4">
           <Card className="p-6 space-y-4">
-            <h2 className="text-sm font-semibold">Canaux de notification</h2>
-            <p className="text-xs text-muted-foreground">Choisissez comment vous souhaitez être notifié pour les assignations et rappels.</p>
-            {[
-              { value: "IN_APP", label: "Dans l'application", desc: "Notifications visibles dans la cloche en haut" },
-              { value: "EMAIL",  label: "Par email",          desc: "Reçu à l'adresse email de votre profil" },
-            ].map(ch => (
-              <label key={ch.value} className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={notifChannels.includes(ch.value)}
-                  onChange={e => setNotifChannels(prev => e.target.checked ? [...prev, ch.value] : prev.filter(c => c !== ch.value))}
+            <h2 className="text-sm font-semibold">Quand être notifié</h2>
+            <p className="text-xs text-muted-foreground">Choisissez les événements pour lesquels vous recevez une notification dans l&apos;application.</p>
+            {NOTIF_EVENTS.map(ev => (
+              <label key={ev.value} className="flex items-start gap-3 cursor-pointer group">
+                <input type="checkbox" checked={notifEvents.includes(ev.value)}
+                  onChange={e => setNotifEvents(prev => e.target.checked ? [...prev, ev.value] : prev.filter(c => c !== ev.value))}
                   className="mt-0.5 rounded" />
                 <div>
-                  <p className="text-sm font-medium">{ch.label}</p>
-                  <p className="text-xs text-muted-foreground">{ch.desc}</p>
+                  <p className="text-sm font-medium group-hover:text-foreground transition-colors">{ev.label}</p>
+                  <p className="text-xs text-muted-foreground">{ev.desc}</p>
                 </div>
               </label>
             ))}
-            <Button onClick={handleSaveNotif} disabled={savingNotif} size="sm">{savingNotif ? "Sauvegarde…" : "Enregistrer"}</Button>
+          </Card>
+
+          <Card className="p-6 space-y-4">
+            <h2 className="text-sm font-semibold">Canal</h2>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked disabled className="mt-0.5 rounded" />
+              <div>
+                <p className="text-sm font-medium">Dans l&apos;application</p>
+                <p className="text-xs text-muted-foreground">Notifications visibles dans la cloche — toujours actif</p>
+              </div>
+            </label>
+            <p className="text-xs text-muted-foreground border-t border-border pt-3">
+              L&apos;envoi par email sera disponible dans une prochaine version.
+            </p>
+            <Button onClick={handleSaveNotif} disabled={savingNotif} size="sm">{savingNotif ? "Sauvegarde…" : "Enregistrer mes préférences"}</Button>
           </Card>
         </div>
       )}

@@ -68,9 +68,7 @@ export default async function LoginPage({
 
             <div className="mt-4 pt-4 border-t border-border text-center">
               <p className="text-sm text-muted-foreground mb-3">Pas encore de compte ?</p>
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/register">Créer un compte</Link>
-              </Button>
+              <Link href="/register" className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Créer un compte</Link>
             </div>
           </CardContent>
         </Card>
