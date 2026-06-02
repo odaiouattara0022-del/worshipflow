@@ -3,10 +3,12 @@
  *
  * Demande uniquement ce qui est strictement nécessaire :
  *   1. URL de ProSendWorship
- *   2. ID de l'appareil ProPresenter
+ *   2. ID de l'appareil
+ *   3. Type de logiciel (propresenter | freeshow)
  *
  * ProPresenter tourne sur le même ordinateur → hôte/port auto-détectés.
  * Dossier PP auto-détecté depuis le profil Windows courant.
+ * FreeShow : port et dossier Shows à confirmer manuellement.
  */
 
 "use strict";
@@ -103,38 +105,74 @@ async function main() {
     process.exit(1);
   }
 
-  // ── Détection automatique de ProPresenter ───────────────────
+  // ── Type de logiciel de présentation ────────────────────────
   console.log("");
-  console.log("  Détection automatique de ProPresenter...");
+  console.log("  Type de logiciel de présentation :");
+  console.log("    propresenter  — ProPresenter 7 (défaut)");
+  console.log("    freeshow      — FreeShow");
+  const deviceType = (await ask("Type", "propresenter")).toLowerCase();
 
-  const ppHost = "127.0.0.1";
-  const ppPort = 1025;
-  const ppVersion = await testPPConnection(ppHost, ppPort);
-
-  if (ppVersion) {
-    console.log(`  ✓ ProPresenter détecté (v${ppVersion})`);
-  } else {
-    console.log("  ⚠ ProPresenter non accessible sur le port 1025.");
-    console.log("    Assurez-vous que ProPresenter est ouvert et que l'API HTTP est activée :");
-    console.log("    ProPresenter → Préférences → Réseau → Activer l'API HTTP (port 1025)");
-    console.log("    L'agent continuera quand même — ProPresenter peut être lancé plus tard.");
+  if (deviceType !== "propresenter" && deviceType !== "freeshow") {
+    console.error(`\n  ERREUR : Type invalide « ${deviceType} ». Choisissez propresenter ou freeshow.`);
+    process.exit(1);
   }
 
-  // ── Dossier de données PP ────────────────────────────────────
-  const ppDataPath = detectPPDataPath();
-  if (fs.existsSync(ppDataPath)) {
-    console.log(`  ✓ Dossier ProPresenter détecté : ${ppDataPath}`);
-  } else {
-    console.log(`  ⚠ Dossier ProPresenter non trouvé (sera créé si besoin)`);
-  }
+  // ── Variables spécifiques au type ───────────────────────────
+  let ppHost = "127.0.0.1";
+  let ppPort = 1025;
+  let ppDataPath = null;
+  let protoDir = null;
+  let freeShowPort = null;
+  let freeShowShowsPath = null;
 
-  // ── Dossier proto ────────────────────────────────────────────
-  const protoDir = detectProtoDir();
-  if (protoDir) {
-    console.log(`  ✓ Fichiers proto ProPresenter détectés : ${protoDir}`);
+  if (deviceType === "freeshow") {
+    // ── FreeShow ─────────────────────────────────────────────
+    console.log("");
+    console.log("  Configuration FreeShow...");
+    const fsPortRaw = await ask("Port FreeShow", "5505");
+    freeShowPort = parseInt(fsPortRaw, 10) || 5505;
+    freeShowShowsPath = await ask("Dossier Shows FreeShow", path.join(os.homedir(), "Documents", "FreeShow", "Shows"));
+    if (!freeShowShowsPath) {
+      console.error("\n  ERREUR : Le dossier Shows FreeShow est requis.");
+      process.exit(1);
+    }
+    if (!fs.existsSync(freeShowShowsPath)) {
+      console.log(`  ⚠ Dossier Shows non trouvé : ${freeShowShowsPath} (sera créé si besoin)`);
+    } else {
+      console.log(`  ✓ Dossier Shows FreeShow : ${freeShowShowsPath}`);
+    }
   } else {
-    console.log(`  ⚠ Fichiers proto non trouvés — génération de fichiers .pro désactivée.`);
-    console.log(`    (L'agent fonctionnera pour le contrôle, statut, etc.)`);
+    // ── ProPresenter ─────────────────────────────────────────
+    console.log("");
+    console.log("  Détection automatique de ProPresenter...");
+
+    const ppVersion = await testPPConnection(ppHost, ppPort);
+
+    if (ppVersion) {
+      console.log(`  ✓ ProPresenter détecté (v${ppVersion})`);
+    } else {
+      console.log("  ⚠ ProPresenter non accessible sur le port 1025.");
+      console.log("    Assurez-vous que ProPresenter est ouvert et que l'API HTTP est activée :");
+      console.log("    ProPresenter → Préférences → Réseau → Activer l'API HTTP (port 1025)");
+      console.log("    L'agent continuera quand même — ProPresenter peut être lancé plus tard.");
+    }
+
+    // ── Dossier de données PP ──────────────────────────────────
+    ppDataPath = detectPPDataPath();
+    if (fs.existsSync(ppDataPath)) {
+      console.log(`  ✓ Dossier ProPresenter détecté : ${ppDataPath}`);
+    } else {
+      console.log(`  ⚠ Dossier ProPresenter non trouvé (sera créé si besoin)`);
+    }
+
+    // ── Dossier proto ──────────────────────────────────────────
+    protoDir = detectProtoDir();
+    if (protoDir) {
+      console.log(`  ✓ Fichiers proto ProPresenter détectés : ${protoDir}`);
+    } else {
+      console.log(`  ⚠ Fichiers proto non trouvés — génération de fichiers .pro désactivée.`);
+      console.log(`    (L'agent fonctionnera pour le contrôle, statut, etc.)`);
+    }
   }
 
   // ── Enregistrement auprès du serveur ────────────────────────
@@ -188,10 +226,12 @@ async function main() {
     serverUrl,
     deviceId,
     agentToken,
+    type: deviceType,
     ppHost,
     ppPort,
     ppDataPath,
     protoDir: protoDir || null,
+    ...(deviceType === "freeshow" ? { freeShowPort, freeShowShowsPath } : {}),
   };
 
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
@@ -205,6 +245,10 @@ async function main() {
 
   // Create watchdog VBScript next to the exe
   const watchdogPath = path.join(exeDir, "_watchdog.vbs");
+  // Watch for either ProPresenter or FreeShow depending on configured type
+  const watchedProcessQuery = deviceType === "freeshow"
+    ? `"SELECT * FROM Win32_Process WHERE Name LIKE 'FreeShow%'"`
+    : `"SELECT * FROM Win32_Process WHERE Name LIKE 'ProPresenter%'"`;
   const watchdogContent = [
     `Dim shell, wmi, agentDir`,
     `Set shell = CreateObject("WScript.Shell")`,
@@ -213,7 +257,7 @@ async function main() {
     `Do While True`,
     `  Dim ppRunning, agentRunning`,
     `  ppRunning = False : agentRunning = False`,
-    `  Set ppProcs = wmi.ExecQuery("SELECT * FROM Win32_Process WHERE Name LIKE 'ProPresenter%'")`,
+    `  Set ppProcs = wmi.ExecQuery(${watchedProcessQuery})`,
     `  ppRunning = (ppProcs.Count > 0)`,
     `  Set nodeProcs = wmi.ExecQuery("SELECT * FROM Win32_Process WHERE Name = 'pp-agent.exe'")`,
     `  agentRunning = (nodeProcs.Count > 0)`,
@@ -237,7 +281,8 @@ async function main() {
       { stdio: "ignore" }
     );
     console.log("  ✓ Démarrage automatique configuré");
-    console.log("    → L'agent démarrera automatiquement à l'ouverture de ProPresenter");
+    const watchedApp = deviceType === "freeshow" ? "FreeShow" : "ProPresenter";
+    console.log(`    → L'agent démarrera automatiquement à l'ouverture de ${watchedApp}`);
     // Start watchdog immediately
     try {
       execSync(`start "" wscript.exe "${watchdogPath}"`, { stdio: "ignore", shell: true });
