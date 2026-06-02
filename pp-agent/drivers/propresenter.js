@@ -397,9 +397,9 @@ let _protoLoadPromise = null;
 let _templateLoadPromise = null;
 
 function getBuiltinProtoDir() {
-  // In pkg mode, proto files are bundled in snapshot at __dirname/proto
-  // In dev mode, __dirname is the pp-agent folder
-  return path.join(__dirname, "proto");
+  // In pkg mode, proto files are bundled in snapshot at __dirname/../proto
+  // In dev mode, __dirname is pp-agent/drivers, so ".." resolves to pp-agent/
+  return path.join(__dirname, "..", "proto");
 }
 
 function resolveProtoDir(config) {

@@ -55,8 +55,15 @@ const HB_EVERY  = 60;
 let errors = 0, polls = 0;
 
 async function runAgent() {
-  const { dispatch } = require("./handlers");
   const config = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
+
+  const DRIVERS = {
+    propresenter: () => require("./drivers/propresenter"),
+    freeshow:     () => require("./drivers/freeshow"),
+  };
+  const driverType = config.type || "propresenter";
+  const driverFactory = DRIVERS[driverType] || DRIVERS.propresenter;
+  const { dispatch } = driverFactory();
 
   console.log("");
   console.log("╔══════════════════════════════════════════════════╗");
