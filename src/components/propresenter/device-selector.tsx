@@ -10,6 +10,8 @@ interface PPDeviceInfo {
   name: string;
   host: string;
   port: number;
+  type: string;
+  config: string | null;
   isDefault: boolean;
   libraryPath: string;
   online: boolean;
@@ -173,6 +175,9 @@ export function DeviceManager() {
   const [newHost, setNewHost] = useState("");
   const [newPort, setNewPort] = useState("12345");
   const [newLibPath, setNewLibPath] = useState("");
+  const [newType, setNewType] = useState("propresenter");
+  const [newFreeShowPort, setNewFreeShowPort] = useState("5505");
+  const [newFreeShowShowsPath, setNewFreeShowShowsPath] = useState("");
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -202,6 +207,9 @@ export function DeviceManager() {
       return;
     }
     try {
+      const config = newType === "freeshow"
+        ? JSON.stringify({ freeShowPort: newFreeShowPort.trim() || "5505", freeShowShowsPath: newFreeShowShowsPath.trim() })
+        : null;
       const res = await fetch("/api/propresenter/devices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -210,6 +218,8 @@ export function DeviceManager() {
           host: newHost.trim(),
           port: parseInt(newPort) || 12345,
           libraryPath: newLibPath.trim(),
+          type: newType,
+          config,
         }),
       });
       if (!res.ok) {
@@ -222,6 +232,9 @@ export function DeviceManager() {
       setNewHost("");
       setNewPort("12345");
       setNewLibPath("");
+      setNewType("propresenter");
+      setNewFreeShowPort("5505");
+      setNewFreeShowShowsPath("");
       setShowAdd(false);
       fetchDevices();
     } catch {
@@ -336,7 +349,7 @@ export function DeviceManager() {
     <div className="space-y-4">
       {devices.length === 0 && !showAdd && (
         <p className="text-sm text-muted-foreground">
-          Aucun appareil ProPresenter configuré.
+          Aucun appareil de sortie configuré.
         </p>
       )}
 
@@ -455,6 +468,18 @@ export function DeviceManager() {
         <div className="rounded-md border border-dashed border-border p-4 space-y-3">
           <h4 className="text-sm font-medium">Nouvel appareil</h4>
           <div className="space-y-2">
+            {/* Type selector */}
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Logiciel de présentation</label>
+              <select
+                value={newType}
+                onChange={(e) => setNewType(e.target.value)}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="propresenter">ProPresenter</option>
+                <option value="freeshow">FreeShow</option>
+              </select>
+            </div>
             <input
               type="text"
               placeholder="Nom (ex: PC Principal)"
@@ -478,18 +503,50 @@ export function DeviceManager() {
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
-            <input
-              type="text"
-              placeholder="Chemin bibliothèque PP (ex: \\192.168.1.12\ProPresenter\Libraries\Default)"
-              value={newLibPath}
-              onChange={(e) => setNewLibPath(e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <p className="text-xs text-muted-foreground">
-              Pour un appareil local : C:\Users\...\Documents\ProPresenter\Libraries\Default
-              <br />
-              Pour un appareil distant : \\adresse-ip\Dossier-partagé\ProPresenter\Libraries\Default
-            </p>
+            {/* FreeShow-specific fields */}
+            {newType === "freeshow" && (
+              <div className="space-y-2 rounded-md bg-muted/40 px-3 py-2.5">
+                <p className="text-xs font-medium text-muted-foreground">Paramètres FreeShow</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-1">
+                    <label className="text-xs text-muted-foreground block mb-1">Port FreeShow</label>
+                    <input
+                      type="text"
+                      placeholder="5505"
+                      value={newFreeShowPort}
+                      onChange={(e) => setNewFreeShowPort(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-muted-foreground block mb-1">Chemin des Shows</label>
+                    <input
+                      type="text"
+                      placeholder="C:\Users\...\FreeShow\Shows"
+                      value={newFreeShowShowsPath}
+                      onChange={(e) => setNewFreeShowShowsPath(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            {newType === "propresenter" && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Chemin bibliothèque PP (ex: \\192.168.1.12\ProPresenter\Libraries\Default)"
+                  value={newLibPath}
+                  onChange={(e) => setNewLibPath(e.target.value)}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Pour un appareil local : C:\Users\...\Documents\ProPresenter\Libraries\Default
+                  <br />
+                  Pour un appareil distant : \\adresse-ip\Dossier-partagé\ProPresenter\Libraries\Default
+                </p>
+              </>
+            )}
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleAdd}>
@@ -498,7 +555,12 @@ export function DeviceManager() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setShowAdd(false)}
+              onClick={() => {
+                setShowAdd(false);
+                setNewType("propresenter");
+                setNewFreeShowPort("5505");
+                setNewFreeShowShowsPath("");
+              }}
             >
               Annuler
             </Button>

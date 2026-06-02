@@ -16,6 +16,7 @@ import {
   LayoutList,
   Play,
 } from "lucide-react";
+import { getCapabilities } from "@/lib/output/capabilities";
 
 interface SlideInfo {
   current: { index: number; name?: string };
@@ -47,6 +48,7 @@ interface PPPlaylistItem {
 
 export default function LiveControlPage() {
   const [deviceId, setDeviceId] = useState("");
+  const [deviceType, setDeviceType] = useState("propresenter");
   const [connected, setConnected] = useState(false);
   const [slideInfo, setSlideInfo] = useState<SlideInfo | null>(null);
   const [activePresentation, setActivePresentation] = useState<ActivePresentation | null>(null);
@@ -55,6 +57,20 @@ export default function LiveControlPage() {
   const [playlistItems, setPlaylistItems] = useState<PPPlaylistItem[]>([]);
   const [sending, setSending] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Resolve device type for capability gating
+  useEffect(() => {
+    if (!deviceId) return;
+    fetch("/api/propresenter/devices")
+      .then((r) => r.json())
+      .then((data) => {
+        const found = (data.devices ?? []).find((d: { id: string; type?: string }) => d.id === deviceId);
+        if (found) setDeviceType(found.type ?? "propresenter");
+      })
+      .catch(() => {});
+  }, [deviceId]);
+
+  const caps = getCapabilities(deviceType);
 
   // PP control helper
   const ppControl = useCallback(
@@ -227,7 +243,13 @@ export default function LiveControlPage() {
         }
       />
 
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {!caps.liveControl && (
+        <div className="mt-6 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+          Ce logiciel ne supporte pas le contrôle live.
+        </div>
+      )}
+
+      <div className={`mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 ${!caps.liveControl ? "pointer-events-none opacity-50" : ""}`}>
         {/* Main control area */}
         <div className="lg:col-span-2 space-y-4">
           {/* Transport controls */}

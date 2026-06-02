@@ -29,11 +29,11 @@ export async function GET() {
 /**
  * POST /api/propresenter/devices
  * Add a new PP device.
- * Body: { name: string, host: string, port?: number, isDefault?: boolean }
+ * Body: { name: string, host: string, port?: number, isDefault?: boolean, type?: string, config?: string }
  */
 export async function POST(request: NextRequest) {
   try {
-    const { name, host, port, isDefault, libraryPath } = await request.json();
+    const { name, host, port, isDefault, libraryPath, type, config } = await request.json();
 
     if (!name || !host) {
       return NextResponse.json(
@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
         port: port || 1025,
         isDefault: isDefault ?? false,
         libraryPath: libraryPath || "",
+        type: type || "propresenter",
+        config: config ?? null,
       },
     });
 

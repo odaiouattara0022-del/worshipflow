@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Monitor, RefreshCw } from "lucide-react";
 import { DeviceSelector } from "@/components/propresenter/device-selector";
+import { getCapabilities } from "@/lib/output/capabilities";
 
 interface ThemeSlide {
   uuid: string;
@@ -34,12 +35,18 @@ interface SendSongToPPProps {
   songTitle: string;
 }
 
+interface PPDeviceBasic {
+  id: string;
+  type: string;
+}
+
 export function SendSongToPP({ songId, songTitle }: SendSongToPPProps) {
   const [sending, setSending] = useState(false);
   const [themes, setThemes] = useState<PPTheme[]>([]);
   const [selectedTheme, setSelectedTheme] = useState("");
   const [selectedSlideUuid, setSelectedSlideUuid] = useState("");
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
+  const [deviceType, setDeviceType] = useState("propresenter");
   const [loadingThemes, setLoadingThemes] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [libraries, setLibraries] = useState<PPLibrary[]>([]);
@@ -48,6 +55,22 @@ export function SendSongToPP({ songId, songTitle }: SendSongToPPProps) {
   const [playlists, setPlaylists] = useState<PPPlaylist[]>([]);
   const [selectedPlaylistUuid, setSelectedPlaylistUuid] = useState("");
   const [loadingPlaylists, setLoadingPlaylists] = useState(true);
+  const [deviceList, setDeviceList] = useState<PPDeviceBasic[]>([]);
+
+  // Fetch device list to resolve device type for capability gating
+  useEffect(() => {
+    fetch("/api/propresenter/devices")
+      .then((r) => r.json())
+      .then((data) => setDeviceList(data.devices ?? []))
+      .catch(() => {});
+  }, []);
+
+  // Resolve device type whenever selected device changes
+  useEffect(() => {
+    if (!selectedDeviceId || deviceList.length === 0) return;
+    const found = deviceList.find((d) => d.id === selectedDeviceId);
+    if (found) setDeviceType(found.type ?? "propresenter");
+  }, [selectedDeviceId, deviceList]);
 
   const fetchPlaylists = useCallback(async () => {
     setLoadingPlaylists(true);
@@ -180,11 +203,13 @@ export function SendSongToPP({ songId, songTitle }: SendSongToPPProps) {
     }
   }
 
+  const caps = getCapabilities(deviceType);
+
   return (
     <div className="flex flex-col gap-3 p-4 rounded-lg border border-border bg-card">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Monitor className="h-4 w-4 text-primary" />
-        Envoyer à ProPresenter
+        Envoyer vers le logiciel de présentation
       </div>
 
       {/* Sélection de l'appareil */}
@@ -251,69 +276,77 @@ export function SendSongToPP({ songId, songTitle }: SendSongToPPProps) {
         </button>
       </div>
 
-      {loadingThemes ? (
-        <span className="text-sm text-muted-foreground">
-          Chargement des thèmes…
-        </span>
-      ) : (
-        <>
-          {/* Sélection du groupe de thème */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground shrink-0 w-16">
-              Thème
-            </label>
-            <select
-              value={selectedTheme}
-              onChange={(e) => setSelectedTheme(e.target.value)}
-              disabled={sending}
-              className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">Sans thème</option>
-              {themes.map((t) => (
-                <option key={t.name} value={t.name}>
-                  {t.name} ({t.slides.length} éléments)
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => fetchThemes(false)}
-              disabled={refreshing || sending}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:bg-accent"
-              title="Rafraîchir les thèmes"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-              />
-            </button>
-          </div>
-
-          {/* Sélection de la diapositive du thème */}
-          {selectedTheme && slides.length > 0 && (
+      {caps.themes && (
+        loadingThemes ? (
+          <span className="text-sm text-muted-foreground">
+            Chargement des thèmes…
+          </span>
+        ) : (
+          <>
+            {/* Sélection du groupe de thème */}
             <div className="flex items-center gap-2">
               <label className="text-xs text-muted-foreground shrink-0 w-16">
-                Modèle
+                Thème
               </label>
               <select
-                value={selectedSlideUuid}
-                onChange={(e) => setSelectedSlideUuid(e.target.value)}
+                value={selectedTheme}
+                onChange={(e) => setSelectedTheme(e.target.value)}
                 disabled={sending}
                 className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                {slides.map((s) => (
-                  <option key={s.uuid} value={s.uuid}>
-                    {s.name}
+                <option value="">Sans thème</option>
+                {themes.map((t) => (
+                  <option key={t.name} value={t.name}>
+                    {t.name} ({t.slides.length} éléments)
                   </option>
                 ))}
               </select>
+              <button
+                type="button"
+                onClick={() => fetchThemes(false)}
+                disabled={refreshing || sending}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:bg-accent"
+                title="Rafraîchir les thèmes"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+              </button>
             </div>
-          )}
-        </>
+
+            {/* Sélection de la diapositive du thème */}
+            {selectedTheme && slides.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground shrink-0 w-16">
+                  Modèle
+                </label>
+                <select
+                  value={selectedSlideUuid}
+                  onChange={(e) => setSelectedSlideUuid(e.target.value)}
+                  disabled={sending}
+                  className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {slides.map((s) => (
+                    <option key={s.uuid} value={s.uuid}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </>
+        )
       )}
 
-      <Button onClick={handleSend} disabled={sending || loadingThemes}>
-        {sending ? "Envoi en cours…" : `Envoyer « ${songTitle} »`}
-      </Button>
+      {caps.sendSong ? (
+        <Button onClick={handleSend} disabled={sending || (caps.themes && loadingThemes)}>
+          {sending ? "Envoi en cours…" : `Envoyer « ${songTitle} »`}
+        </Button>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">
+          Ce logiciel ne supporte pas l&apos;envoi de chants.
+        </p>
+      )}
     </div>
   );
 }
