@@ -9,6 +9,8 @@ interface CurrentUser {
   email: string | null;
   phone: string | null;
   avatar: string | null;
+  churchId: string | null;
+  churchRole: string | null;
 }
 
 export function useCurrentUser() {

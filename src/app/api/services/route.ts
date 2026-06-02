@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
+  const user = await getCurrentUser() as any;
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status") || "";
   const type = searchParams.get("type") || "";
@@ -9,15 +11,14 @@ export async function GET(request: NextRequest) {
 
   const where: Record<string, unknown> = {};
 
-  if (status) {
-    where.status = status;
+  // Isolate by church — users without a church see their own services (legacy)
+  if (user?.churchId) {
+    where.churchId = user.churchId;
   }
-  if (type) {
-    where.type = type;
-  }
-  if (upcoming) {
-    where.date = { gte: new Date() };
-  }
+
+  if (status) where.status = status;
+  if (type) where.type = type;
+  if (upcoming) where.date = { gte: new Date() };
 
   const services = await prisma.service.findMany({
     where,
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getCurrentUser() as any;
   const body = await request.json();
   const { title, date, type, notes, templateId } = body;
 
@@ -75,6 +77,7 @@ export async function POST(request: NextRequest) {
       type: type || "culte",
       notes: notes || null,
       templateId: templateId || null,
+      churchId: user?.churchId ?? null,
       items: itemsData.length > 0 ? { create: itemsData } : undefined,
     },
     include: {

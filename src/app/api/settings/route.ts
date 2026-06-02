@@ -3,9 +3,8 @@ import { prisma } from "@/lib/db";
 
 export async function GET() {
   const settings = await prisma.appSettings.findMany();
-  // Convert to key-value map
   const map: Record<string, string> = {};
-  for (const s of settings) {
+  for (const s of settings as any[]) {
     map[s.key] = s.value;
   }
   return NextResponse.json(map);
@@ -13,22 +12,27 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   const body = await request.json();
-
-  // body is Record<string, string>
   const entries = Object.entries(body) as [string, string][];
 
   for (const [key, value] of entries) {
-    await prisma.appSettings.upsert({
-      where: { key },
-      update: { value: String(value) },
-      create: { key, value: String(value) },
-    });
+    if (value === undefined || value === null) continue;
+
+    const existing = await prisma.appSettings.findFirst({ where: { key } });
+    if (existing) {
+      await prisma.appSettings.update({
+        where: { id: (existing as any).id },
+        data: { value: String(value) },
+      });
+    } else {
+      await prisma.appSettings.create({
+        data: { key, value: String(value) },
+      });
+    }
   }
 
-  // Return updated settings
   const settings = await prisma.appSettings.findMany();
   const map: Record<string, string> = {};
-  for (const s of settings) {
+  for (const s of settings as any[]) {
     map[s.key] = s.value;
   }
   return NextResponse.json(map);

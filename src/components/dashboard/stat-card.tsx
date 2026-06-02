@@ -1,23 +1,34 @@
-import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
   label: string;
   value: string | number;
-  icon: string;
+  icon: LucideIcon;
   sublabel?: string;
+  trend?: "up" | "neutral" | "down";
 }
 
-export function StatCard({ label, value, icon, sublabel }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, sublabel, trend }: StatCardProps) {
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="text-xl">{icon}</span>
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
+        <div className="rounded-md bg-muted p-1.5">
+          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
       </div>
-      <div className="text-3xl font-bold">{value}</div>
+      <div className="text-2xl font-semibold tabular-nums tracking-tight">{value}</div>
       {sublabel && (
-        <p className="text-xs text-muted-foreground mt-1">{sublabel}</p>
+        <p className={cn(
+          "text-xs mt-1.5",
+          trend === "up" ? "text-green-600 dark:text-green-400" :
+          trend === "down" ? "text-red-500" :
+          "text-muted-foreground"
+        )}>
+          {sublabel}
+        </p>
       )}
-    </Card>
+    </div>
   );
 }

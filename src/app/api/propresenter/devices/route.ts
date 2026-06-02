@@ -10,27 +10,18 @@ export async function GET() {
     orderBy: [{ isDefault: "desc" }, { name: "asc" }],
   });
 
-  // Check online status for each device in parallel
-  const devicesWithStatus = await Promise.all(
-    devices.map(async (device: any) => {
-      let online = false;
-      let version: string | null = null;
-      try {
-        const res = await fetch(
-          `http://${device.host}:${device.port}/version`,
-          { signal: AbortSignal.timeout(3000) }
-        );
-        if (res.ok) {
-          online = true;
-          const data = await res.json();
-          version = data.host_description ?? data.name ?? null;
-        }
-      } catch {
-        // offline
-      }
-      return { ...device, online, version };
-    })
-  );
+  // Online status comes from the bridge (agentOnline + agentLastSeen)
+  // NOT from a direct TCP call — PP is on a local network, Vercel can't reach it.
+  const devicesWithStatus = devices.map((device: any) => {
+    const lastSeen = device.agentLastSeen ? new Date(device.agentLastSeen).getTime() : 0;
+    const agentOnline = !!(device.agentOnline && Date.now() - lastSeen < 30_000);
+    return {
+      ...device,
+      online: agentOnline,
+      agentOnline,
+      version: agentOnline ? (device.agentVersion ?? null) : null,
+    };
+  });
 
   return NextResponse.json({ devices: devicesWithStatus });
 }

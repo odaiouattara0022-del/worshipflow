@@ -24,6 +24,11 @@ interface PPLibrary {
   songCount: number;
 }
 
+interface PPPlaylist {
+  uuid: string;
+  name: string;
+}
+
 interface SendSongToPPProps {
   songId: string;
   songTitle: string;
@@ -40,6 +45,25 @@ export function SendSongToPP({ songId, songTitle }: SendSongToPPProps) {
   const [libraries, setLibraries] = useState<PPLibrary[]>([]);
   const [selectedLibrary, setSelectedLibrary] = useState("");
   const [loadingLibraries, setLoadingLibraries] = useState(true);
+  const [playlists, setPlaylists] = useState<PPPlaylist[]>([]);
+  const [selectedPlaylistUuid, setSelectedPlaylistUuid] = useState("");
+  const [loadingPlaylists, setLoadingPlaylists] = useState(true);
+
+  const fetchPlaylists = useCallback(async () => {
+    setLoadingPlaylists(true);
+    try {
+      const params = selectedDeviceId ? `?deviceId=${selectedDeviceId}` : "";
+      const res = await fetch(`/api/propresenter/playlists${params}`);
+      const data = await res.json();
+      setPlaylists(data.playlists ?? []);
+    } catch {
+      setPlaylists([]);
+    } finally {
+      setLoadingPlaylists(false);
+    }
+  }, [selectedDeviceId]);
+
+  useEffect(() => { fetchPlaylists(); }, [fetchPlaylists]);
 
   const fetchLibraries = useCallback(async () => {
     setLoadingLibraries(true);
@@ -135,6 +159,7 @@ export function SendSongToPP({ songId, songTitle }: SendSongToPPProps) {
           slideUuid: selectedSlideUuid || undefined,
           deviceId: selectedDeviceId || undefined,
           libraryPath: selectedLibrary || undefined,
+          playlistId: selectedPlaylistUuid || undefined,
         }),
       });
 
@@ -197,6 +222,33 @@ export function SendSongToPP({ songId, songTitle }: SendSongToPPProps) {
             ))}
           </select>
         )}
+      </div>
+
+      {/* Sélection de la liste de lecture */}
+      <div className="flex items-center gap-2">
+        <label className="text-xs text-muted-foreground shrink-0 w-16">
+          Playlist
+        </label>
+        <select
+          value={selectedPlaylistUuid}
+          onChange={(e) => setSelectedPlaylistUuid(e.target.value)}
+          disabled={sending || loadingPlaylists}
+          className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">Aucune liste de lecture</option>
+          {playlists.map((p) => (
+            <option key={p.uuid} value={p.uuid}>{p.name}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={fetchPlaylists}
+          disabled={loadingPlaylists || sending}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:bg-accent"
+          title="Rafraîchir les listes de lecture"
+        >
+          <RefreshCw className={`h-4 w-4 ${loadingPlaylists ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       {loadingThemes ? (

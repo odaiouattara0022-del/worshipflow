@@ -3,7 +3,12 @@ import crypto from "crypto";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 
-const AUTH_SECRET = process.env.AUTH_SECRET ?? "worshipflow-secret-change-me";
+const AUTH_SECRET = process.env.AUTH_SECRET;
+if (!AUTH_SECRET) {
+  throw new Error("AUTH_SECRET environment variable is required");
+}
+
+const SESSION_MAX_AGE_MS = 60 * 60 * 24 * 30 * 1000; // 30 days
 
 // ---------------------------------------------------------------------------
 // HMAC session token helpers
@@ -11,7 +16,7 @@ const AUTH_SECRET = process.env.AUTH_SECRET ?? "worshipflow-secret-change-me";
 // ---------------------------------------------------------------------------
 function signToken(payload: string): string {
   const sig = crypto
-    .createHmac("sha256", AUTH_SECRET)
+    .createHmac("sha256", AUTH_SECRET!)
     .update(payload)
     .digest("hex");
   return `${payload}.${sig}`;
@@ -26,14 +31,21 @@ function verifyToken(token: string): string | null {
 
   try {
     const expected = crypto
-      .createHmac("sha256", AUTH_SECRET)
+      .createHmac("sha256", AUTH_SECRET!)
       .update(payload)
       .digest("hex");
-    // Constant-time comparison to prevent timing attacks
     if (!crypto.timingSafeEqual(Buffer.from(sig, "hex"), Buffer.from(expected, "hex"))) {
       return null;
     }
   } catch {
+    return null;
+  }
+
+  // Validate session age
+  const decoded = Buffer.from(payload, "base64url").toString("utf-8");
+  const parts = decoded.split(":");
+  const issuedAt = parseInt(parts[1] ?? "0", 10);
+  if (!issuedAt || Date.now() - issuedAt > SESSION_MAX_AGE_MS) {
     return null;
   }
 
@@ -86,7 +98,7 @@ export async function getCurrentUser() {
 
     return await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, role: true, email: true, phone: true, avatar: true },
+      select: { id: true, name: true, role: true, email: true, phone: true, avatar: true, churchId: true, churchRole: true },
     });
   } catch {
     return null;

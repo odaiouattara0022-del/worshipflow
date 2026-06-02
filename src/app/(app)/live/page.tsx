@@ -100,7 +100,7 @@ export default function LiveControlPage() {
   // Start/stop polling
   useEffect(() => {
     pollStatus();
-    intervalRef.current = setInterval(pollStatus, 800);
+    intervalRef.current = setInterval(pollStatus, 2500);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };

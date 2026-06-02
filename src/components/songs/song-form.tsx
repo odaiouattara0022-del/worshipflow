@@ -13,6 +13,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { WORSHIP_THEMES, parseTags, serializeTags } from "@/lib/themes";
+import { cn } from "@/lib/utils";
+import {
+  Heart, Music2, Flame, Sparkles, Shield, Anchor, Sunrise,
+  RefreshCw, Circle, Radio, Globe, Star, Sun, Leaf, Home, ThumbsUp,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Heart, Music2, Flame, Sparkles, Shield, Anchor, Sunrise,
+  RefreshCw, Circle, Radio, Globe, Star, Sun, Leaf, Home, ThumbsUp,
+};
+function TIcon({ name, className }: { name: string; className?: string }) {
+  const I = ICON_MAP[name]; return I ? <I className={className} /> : null;
+}
 
 const KEYS = ["Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
 
@@ -121,13 +136,35 @@ export function SongForm({ trigger, song }: SongFormProps) {
                 onChange={(e) => setForm({ ...form, tempo: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Tags (virgule)</Label>
-              <Input
-                value={form.tags}
-                onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                placeholder="louange, adoration"
-              />
+            <div className="space-y-2 col-span-2">
+              <Label>Thèmes</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {WORSHIP_THEMES.map((theme) => {
+                  const selected = parseTags(form.tags).includes(theme.slug);
+                  return (
+                    <button
+                      key={theme.slug}
+                      type="button"
+                      onClick={() => {
+                        const current = parseTags(form.tags);
+                        const next = selected
+                          ? current.filter((t) => t !== theme.slug)
+                          : [...current, theme.slug];
+                        setForm({ ...form, tags: serializeTags(next) });
+                      }}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium border transition-colors",
+                        selected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                      )}
+                    >
+                      <TIcon name={theme.icon} className="h-3 w-3" />
+                      {theme.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
           <div className="space-y-2">

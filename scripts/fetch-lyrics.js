@@ -38,7 +38,7 @@ async function searchLyrics(title, author) {
       try {
         const res = await fetch(url, {
           signal: AbortSignal.timeout(5000),
-          headers: { "User-Agent": "WorshipFlow/1.0" },
+          headers: { "User-Agent": "ProSendWorship/1.0" },
         });
         if (res.ok) {
           const data = await res.json();

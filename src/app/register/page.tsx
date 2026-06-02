@@ -1,5 +1,19 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  missing: "Le nom et le mot de passe sont requis",
+  short: "Le mot de passe doit contenir au moins 1 caractère",
+  mismatch: "Les deux mots de passe ne correspondent pas",
+  exists: "Ce nom est déjà utilisé",
+  server: "Erreur serveur, réessayez",
+};
+
 export default async function RegisterPage({
   searchParams,
 }: {
@@ -7,113 +21,98 @@ export default async function RegisterPage({
 }) {
   const { error, name, email, phone } = await searchParams;
 
-  const errorMessages: Record<string, string> = {
-    missing: "Le nom et le mot de passe sont requis",
-    short: "Le mot de passe doit contenir au moins 1 caractère",
-    mismatch: "Les deux mots de passe ne correspondent pas",
-    exists: "Ce nom est déjà utilisé",
-    server: "Erreur serveur, réessayez",
-  };
-
   return (
-    <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", padding: "16px", background: "#09090b" }}>
-      <div style={{ width: "100%", maxWidth: "380px", background: "#18181b", borderRadius: "12px", border: "1px solid #27272a", padding: "32px 24px" }}>
-        <h1 style={{ textAlign: "center", fontSize: "24px", fontWeight: "bold", color: "#6366f1", marginBottom: "4px" }}>
-          ✦ ProSendWorship
-        </h1>
-        <p style={{ textAlign: "center", color: "#a1a1aa", marginBottom: "24px", fontSize: "14px" }}>
-          Créer un compte
-        </p>
-
-        <form action="/api/auth/register" method="POST" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div>
-            <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
-              Nom complet *
-            </label>
-            <input
-              type="text"
-              name="name"
-              required
-              defaultValue={name || ""}
-              placeholder="Ex: Jean Dupont"
-              style={{ width: "100%", height: "44px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
-            />
+    <div className="flex min-h-screen items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-sm space-y-6">
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+            <span className="text-base font-bold text-primary-foreground">W</span>
           </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              defaultValue={email || ""}
-              placeholder="votre@email.com"
-              style={{ width: "100%", height: "44px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
-              Téléphone
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              defaultValue={phone || ""}
-              placeholder="0700000000"
-              style={{ width: "100%", height: "44px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
-              Mot de passe *
-            </label>
-            <input
-              type="password"
-              name="pin"
-              required
-              placeholder="Votre mot de passe"
-              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: "14px", color: "#fafafa", marginBottom: "6px", fontWeight: "500" }}>
-              Confirmer le mot de passe *
-            </label>
-            <input
-              type="password"
-              name="pinConfirm"
-              required
-              placeholder="Confirmez votre mot de passe"
-              style={{ width: "100%", height: "48px", background: "#09090b", border: "1px solid #27272a", borderRadius: "8px", color: "#fafafa", padding: "0 12px", fontSize: "16px", boxSizing: "border-box" }}
-            />
-          </div>
-
-          {error && (
-            <p style={{ color: "#ef4444", textAlign: "center", fontSize: "14px", margin: "0" }}>
-              {errorMessages[error] || "Erreur inconnue"}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            style={{ width: "100%", height: "48px", background: "#6366f1", color: "white", border: "none", borderRadius: "8px", fontSize: "16px", fontWeight: "600", cursor: "pointer" }}
-          >
-            Créer mon compte
-          </button>
-        </form>
-
-        <div style={{ marginTop: "20px", textAlign: "center" }}>
-          <a
-            href="/login"
-            style={{ color: "#a1a1aa", fontSize: "13px", textDecoration: "none" }}
-          >
-            ← Déjà un compte ? Se connecter
-          </a>
+          <h1 className="text-xl font-semibold text-foreground">ProSendWorship</h1>
         </div>
+
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base">Créer un compte</CardTitle>
+            <CardDescription>Rejoignez votre équipe de louange</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action="/api/auth/register" method="POST" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom complet *</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  name="name"
+                  required
+                  defaultValue={name ?? ""}
+                  placeholder="Jean Dupont"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  name="email"
+                  defaultValue={email ?? ""}
+                  placeholder="votre@email.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Téléphone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  name="phone"
+                  defaultValue={phone ?? ""}
+                  placeholder="0700000000"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pin">Mot de passe *</Label>
+                <Input
+                  id="pin"
+                  type="password"
+                  name="pin"
+                  required
+                  placeholder="Votre mot de passe"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pinConfirm">Confirmer le mot de passe *</Label>
+                <Input
+                  id="pinConfirm"
+                  type="password"
+                  name="pinConfirm"
+                  required
+                  placeholder="Confirmez votre mot de passe"
+                />
+              </div>
+
+              {error && (
+                <p className="text-sm text-destructive text-center">
+                  {ERROR_MESSAGES[error] ?? "Erreur inconnue"}
+                </p>
+              )}
+
+              <Button type="submit" className="w-full">
+                Créer mon compte
+              </Button>
+            </form>
+
+            <div className="mt-4 pt-4 border-t border-border text-center">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/login">← Déjà un compte ? Se connecter</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

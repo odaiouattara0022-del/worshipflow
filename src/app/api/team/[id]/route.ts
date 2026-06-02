@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { hashPin, requireAdmin, getCurrentUser } from "@/lib/auth";
+import { hashPin, verifyPin, requireAdmin, getCurrentUser } from "@/lib/auth";
 
 export async function GET(
   _: NextRequest,
@@ -58,21 +58,23 @@ export async function PUT(
   const body = await request.json();
   const data: Record<string, unknown> = {};
 
-  // Only admins can change name and role
-  if (isAdmin) {
-    if (body.name !== undefined) data.name = body.name;
-    if (body.role !== undefined) data.role = body.role;
-  }
+  // Name: admin can change anyone's, self can change own
+  if (body.name !== undefined && (isAdmin || isSelf)) data.name = body.name;
+  // Role: admin only
+  if (body.role !== undefined && isAdmin) data.role = body.role;
 
-  // Self or admin can change these
+  // Self or admin can change contact info
   if (body.email !== undefined) data.email = body.email || null;
   if (body.phone !== undefined) data.phone = body.phone || null;
+
+  // PIN change — verify current PIN first (except admin changing someone else's)
   if (body.pin) {
-    if (String(body.pin).length < 1) {
-      return NextResponse.json(
-        { error: "Le mot de passe est requis" },
-        { status: 400 }
-      );
+    if (isSelf && !isAdmin) {
+      // Verify current PIN
+      const target = await prisma.user.findUnique({ where: { id }, select: { pin: true } });
+      if (!target) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
+      const valid = await verifyPin(body.currentPin ?? "", target.pin);
+      if (!valid) return NextResponse.json({ error: "Mot de passe actuel incorrect" }, { status: 401 });
     }
     data.pin = await hashPin(body.pin);
   }

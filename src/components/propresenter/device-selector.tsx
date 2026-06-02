@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Plus, Trash2, Star, Wifi, WifiOff, Search } from "lucide-react";
+import { RefreshCw, Plus, Trash2, Star, Wifi, WifiOff, Search, Copy, Check, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -134,6 +134,30 @@ export function DeviceSelector({
         </button>
       ))}
     </div>
+  );
+}
+
+function CopyIdButton({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(id).then(() => {
+      setCopied(true);
+      toast.success("ID copié !");
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={`ID agent : ${id}`}
+      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+    >
+      {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+      <span className="font-mono">{id.slice(0, 8)}…</span>
+    </button>
   );
 }
 
@@ -349,6 +373,7 @@ export function DeviceManager() {
                 {d.host}:{d.port}
                 {d.version ? ` — ${d.version}` : ""}
               </span>
+              <CopyIdButton id={d.id} />
             </div>
             <div className="flex items-center gap-1">
               {!d.isDefault && (
@@ -372,32 +397,59 @@ export function DeviceManager() {
             </div>
           </div>
 
-          {/* Library path */}
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={d.libraryPath || ""}
-              onChange={(e) => handleSetLibPath(d.id, e.target.value)}
-              placeholder="Chemin bibliothèque PP (ex: \\NOM-PC\...)"
-              className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="button"
-              onClick={() => handleDetectPath(d.id, d.name)}
-              className="inline-flex h-8 items-center gap-1 px-2 rounded-md border border-input bg-background text-xs text-muted-foreground hover:bg-accent shrink-0"
-              title="Détecter automatiquement"
-            >
-              <Search className="h-3.5 w-3.5" />
-              Détecter
-            </button>
-          </div>
-          {!d.libraryPath && (
-            <p className="text-xs text-orange-500">
-              ⚠ Sans chemin, les chants ne seront pas envoyés à cet appareil
+          {/* Library path — only relevant when agent is offline (agent auto-detects when online) */}
+          {!d.online && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={d.libraryPath || ""}
+                onChange={(e) => handleSetLibPath(d.id, e.target.value)}
+                placeholder="Chemin bibliothèque PP (ex: \\NOM-PC\...)"
+                className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => handleDetectPath(d.id, d.name)}
+                className="inline-flex h-8 items-center gap-1 px-2 rounded-md border border-input bg-background text-xs text-muted-foreground hover:bg-accent shrink-0"
+                title="Détecter automatiquement"
+              >
+                <Search className="h-3.5 w-3.5" />
+                Détecter
+              </button>
+            </div>
+          )}
+          {!d.online && !d.libraryPath && (
+            <p className="text-xs text-amber-500">
+              Agent hors ligne — renseignez le chemin pour pouvoir envoyer des chants
             </p>
           )}
         </div>
       ))}
+
+      {/* Install on another computer */}
+      <div className="rounded-md border border-dashed border-border p-4 space-y-3 bg-muted/30">
+        <h4 className="text-sm font-medium flex items-center gap-2">
+          <Download className="h-4 w-4" />
+          Installer sur un autre ordinateur
+        </h4>
+        <ol className="text-xs text-muted-foreground space-y-1 list-none">
+          <li>① Ajoutez un appareil ci-dessus et copiez son ID</li>
+          <li>② Téléchargez l&apos;agent et copiez le ZIP sur le PC ProPresenter</li>
+          <li>③ Extrayez le ZIP et double-cliquez sur <code className="bg-muted px-1 py-0.5 rounded">install.bat</code></li>
+          <li>④ L&apos;installation est automatique — collez l&apos;ID quand demandé</li>
+        </ol>
+        <a
+          href="/downloads/pp-agent.exe"
+          download="pp-agent.exe"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Télécharger pp-agent.exe
+        </a>
+        <p className="text-xs text-muted-foreground mt-1">
+          45 MB · Aucune installation requise · Double-cliquez et c&apos;est tout
+        </p>
+      </div>
 
       {showAdd ? (
         <div className="rounded-md border border-dashed border-border p-4 space-y-3">

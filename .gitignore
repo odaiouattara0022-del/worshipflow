@@ -48,3 +48,9 @@ next-env.d.ts
 
 # backup data
 backup-data.json
+
+# local agent — config contains credentials, node_modules are dev-only
+/pp-agent/node_modules
+/pp-agent/pp-agent-config.json
+
+.vercel

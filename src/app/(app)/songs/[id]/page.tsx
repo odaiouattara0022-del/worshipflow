@@ -10,6 +10,8 @@ import { SendSongToPP } from "@/components/songs/send-song-to-pp";
 import { LyricsEditor } from "@/components/songs/lyrics-editor";
 import { SlidePreview } from "@/components/songs/slide-preview";
 import { AudioPlayer } from "@/components/songs/audio-player";
+import { ChordSection } from "@/components/songs/chord-section";
+import { SongTabs } from "@/components/songs/song-tabs";
 import { Button } from "@/components/ui/button";
 
 export default async function SongDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,16 +66,26 @@ export default async function SongDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lyrics editor — main area */}
+        {/* Main — tabbed: Paroles / Accords */}
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Paroles &amp; Slides</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LyricsEditor
-              songId={song.id}
-              songTitle={song.title}
-              initialLyrics={song.lyrics}
+          <CardContent className="pt-4">
+            <SongTabs
+              lyricsContent={
+                <LyricsEditor
+                  songId={song.id}
+                  songTitle={song.title}
+                  initialLyrics={song.lyrics}
+                />
+              }
+              chordsContent={
+                <ChordSection
+                  songId={song.id}
+                  songTitle={song.title}
+                  songAuthor={song.author}
+                  arrangements={song.arrangements as any[]}
+                  defaultKey={song.defaultKey}
+                />
+              }
             />
           </CardContent>
         </Card>

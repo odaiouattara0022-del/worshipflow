@@ -1,154 +1,92 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { scanLibrary } from "@/lib/propresenter/scanner";
-import { join } from "path";
-import { networkInterfaces } from "os";
+import { executeViaAgent, bridgeErrorResponse } from "@/lib/propresenter/bridge";
 
 /**
- * GET /api/propresenter/scan
- * Scan the local network for ProPresenter instances.
- * Returns a list of found devices with their name, IP, port.
+ * GET /api/propresenter/scan?deviceId=xxx
+ * Ask the local agent to scan the network for ProPresenter instances.
  */
-export async function GET() {
-  // Get local network prefix from this machine's IP
-  const nets = networkInterfaces();
-  const localIPs: string[] = [];
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name] ?? []) {
-      if (net.family === "IPv4" && !net.internal) {
-        localIPs.push(net.address);
-      }
-    }
+export async function GET(request: NextRequest) {
+  const deviceId = request.nextUrl.searchParams.get("deviceId");
+
+  const device = deviceId
+    ? await prisma.ppDevice.findFirst({ where: { id: deviceId } })
+    : await prisma.ppDevice.findFirst({ where: { isDefault: true } });
+
+  if (!device) {
+    return NextResponse.json({
+      devices: [],
+      error: "Aucun appareil configuré. Ajoutez d'abord un appareil dans Paramètres → Appareils ProPresenter.",
+    });
   }
 
-  if (localIPs.length === 0) {
-    return NextResponse.json({ devices: [], error: "Pas de réseau détecté" });
+  try {
+    const result = await executeViaAgent((device as any).id, "scan-network", {}, 30_000);
+    return NextResponse.json(result);
+  } catch (err) {
+    return bridgeErrorResponse(err);
   }
-
-  // Scan common ports on the local subnet
-  const found: Array<{ name: string; host: string; port: number; description: string }> = [];
-  const portsToScan = [12345, 1025, 50001];
-
-  for (const localIP of localIPs) {
-    const parts = localIP.split(".");
-    const prefix = parts.slice(0, 3).join(".");
-
-    const promises: Promise<void>[] = [];
-    for (let i = 1; i <= 254; i++) {
-      const ip = `${prefix}.${i}`;
-      for (const port of portsToScan) {
-        promises.push(
-          fetch(`http://${ip}:${port}/version`, {
-            signal: AbortSignal.timeout(1500),
-          })
-            .then(async (res) => {
-              if (res.ok) {
-                const data = await res.json();
-                // Only add if it looks like ProPresenter
-                if (data.host_description?.includes("ProPresenter") || data.api_version) {
-                  found.push({
-                    name: data.name || ip,
-                    host: ip,
-                    port,
-                    description: data.host_description || "ProPresenter",
-                  });
-                }
-              }
-            })
-            .catch(() => {
-              // Not responding — skip
-            })
-        );
-      }
-    }
-
-    await Promise.all(promises);
-  }
-
-  return NextResponse.json({ devices: found });
 }
 
 /**
- * POST /api/propresenter/scan
- * Scan the local PP library and import songs.
+ * POST /api/propresenter/scan?deviceId=xxx
+ * Ask the local agent to scan the PP library, then import songs into DB.
  */
-export async function POST() {
-  let ppDataPath = process.env.PP_DATA_PATH || "";
+export async function POST(request: NextRequest) {
+  const deviceId = request.nextUrl.searchParams.get("deviceId");
 
-  try {
-    const setting = await prisma.appSettings.findUnique({
-      where: { key: "pp_data_path" },
-    });
-    if (setting?.value) {
-      ppDataPath = setting.value;
-    }
-  } catch {
-    // AppSettings may not have the key yet
-  }
+  const device = deviceId
+    ? await prisma.ppDevice.findFirst({ where: { id: deviceId } })
+    : await prisma.ppDevice.findFirst({ where: { isDefault: true } });
 
-  if (!ppDataPath) {
+  if (!device) {
     return NextResponse.json(
-      {
-        error:
-          "Chemin ProPresenter non configuré. Définissez pp_data_path dans les paramètres.",
-      },
-      { status: 400 }
+      { error: "Aucun appareil configuré. Ajoutez d'abord un appareil dans Paramètres → Appareils ProPresenter." },
+      { status: 404 }
     );
   }
 
-  const librariesDir = ppDataPath.toLowerCase().includes("libraries")
-    ? ppDataPath
-    : join(ppDataPath, "Libraries");
+  const libraryPath = (device as any).libraryPath || null;
 
-  const presentations = await scanLibrary(librariesDir);
+  let scanResult: any;
+  try {
+    scanResult = await executeViaAgent(
+      (device as any).id,
+      "scan-library",
+      { libraryPath },
+      60_000
+    ) as any;
+  } catch (err) {
+    return bridgeErrorResponse(err);
+  }
 
-  let imported = 0;
-  let updated = 0;
-  let skipped = 0;
+  const presentations: Array<{ title: string; filePath: string; slides: Array<{ text: string }> }> =
+    scanResult?.presentations ?? [];
+
+  let imported = 0, updated = 0, skipped = 0;
 
   for (const pres of presentations) {
     const lyrics = pres.slides.map((s) => s.text).join("\n\n---\n\n");
-
-    if (!lyrics.trim()) {
-      skipped++;
-      continue;
-    }
+    if (!lyrics.trim()) { skipped++; continue; }
 
     const normalizedPath = pres.filePath.replace(/\\/g, "/");
 
     try {
-      const existing = await prisma.song.findFirst({
-        where: { proPresenterPath: normalizedPath },
-      });
-
+      const existing = await prisma.song.findFirst({ where: { proPresenterPath: normalizedPath } });
       if (existing) {
-        await prisma.song.update({
-          where: { id: existing.id },
-          data: { lyrics, title: pres.title },
-        });
+        await prisma.song.update({ where: { id: (existing as any).id }, data: { lyrics, title: pres.title } });
         updated++;
       } else {
         await prisma.song.create({
-          data: {
-            title: pres.title,
-            lyrics,
-            proPresenterPath: normalizedPath,
-            tags: "import-propresenter",
-            defaultKey: "Do",
-          },
+          data: { title: pres.title, lyrics, proPresenterPath: normalizedPath, tags: "import-propresenter", defaultKey: "Do" },
         });
         imported++;
       }
-    } catch {
-      skipped++;
-    }
+    } catch { skipped++; }
   }
 
   return NextResponse.json({
-    total: presentations.length,
-    imported,
-    updated,
-    skipped,
+    total: presentations.length, imported, updated, skipped,
     message: `Scan terminé : ${imported} importés, ${updated} mis à jour, ${skipped} ignorés sur ${presentations.length} fichiers.`,
   });
 }

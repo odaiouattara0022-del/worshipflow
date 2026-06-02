@@ -1,7 +1,23 @@
-import { NextResponse } from "next/server";
-import { checkConnection } from "@/lib/propresenter/client";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { executeViaAgent, bridgeErrorResponse } from "@/lib/propresenter/bridge";
 
-export async function GET() {
-  const status = await checkConnection();
-  return NextResponse.json(status);
+export async function GET(request: NextRequest) {
+  const deviceId = request.nextUrl.searchParams.get("deviceId");
+
+  // Resolve device
+  const device = deviceId
+    ? await prisma.ppDevice.findFirst({ where: { id: deviceId } })
+    : await prisma.ppDevice.findFirst({ where: { isDefault: true } });
+
+  if (!device) {
+    return NextResponse.json({ connected: false, error: "Aucun appareil configuré" });
+  }
+
+  try {
+    const result = await executeViaAgent((device as any).id, "status", {});
+    return NextResponse.json(result);
+  } catch (err) {
+    return bridgeErrorResponse(err);
+  }
 }

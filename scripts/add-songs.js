@@ -1,5 +1,5 @@
 /**
- * Script to bulk-add worship songs to WorshipFlow.
+ * Script to bulk-add worship songs to ProSendWorship.
  * Run: node scripts/add-songs.js
  */
 

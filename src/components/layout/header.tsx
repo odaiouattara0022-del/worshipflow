@@ -6,14 +6,14 @@ interface HeaderProps {
 
 export function Header({ title, subtitle, action }: HeaderProps) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-6">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold">{title}</h1>
+    <div className="flex items-start justify-between mb-8 pt-2">
+      <div className="min-w-0">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground truncate">{title}</h1>
         {subtitle && (
-          <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
         )}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="ml-4 shrink-0">{action}</div>}
     </div>
   );
 }

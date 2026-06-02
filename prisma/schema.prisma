@@ -4,7 +4,48 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Church {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  inviteCode  String   @unique @default(uuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members      User[]
+  joinRequests JoinRequest[]
+  services     Service[]
+}
+
+model JoinRequest {
+  id        String   @id @default(uuid())
+  churchId  String
+  userId    String
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  church   Church               @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages JoinRequestMessage[]
+
+  @@unique([churchId, userId])
+}
+
+model JoinRequestMessage {
+  id            String   @id @default(uuid())
+  joinRequestId String
+  senderId      String
+  content       String
+  createdAt     DateTime @default(now())
+
+  joinRequest JoinRequest @relation(fields: [joinRequestId], references: [id], onDelete: Cascade)
+  sender      User        @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }
 
 model User {
@@ -15,13 +56,18 @@ model User {
   pin       String
   role      String   @default("MEMBER") // ADMIN, LEADER, MEMBER
   avatar    String?
+  churchId  String?
+  churchRole String? @default("MEMBER") // OWNER, ADMIN, MEMBER
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  church        Church?              @relation(fields: [churchId], references: [id])
   assignments   TeamAssignment[]
   availability  Availability[]
   notifications Notification[]
-  assignedItems ServiceItem[]    @relation("ItemAssignee")
+  assignedItems ServiceItem[]        @relation("ItemAssignee")
+  joinRequests  JoinRequest[]
+  messages      JoinRequestMessage[]
 }
 
 model Service {
@@ -32,9 +78,11 @@ model Service {
   status     String   @default("DRAFT") // DRAFT, READY, DONE
   templateId String?
   notes      String?
+  churchId   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  church      Church?          @relation(fields: [churchId], references: [id])
   template    ServiceTemplate? @relation(fields: [templateId], references: [id])
   items       ServiceItem[]
   assignments TeamAssignment[]
@@ -74,8 +122,8 @@ model Song {
   artistCredits    String?
   album            String?
   copyrightDisplay Boolean   @default(true)
-  audioUrl         String?   // Local path or URL to audio file (rehearsal track, click, etc.)
-  audioLabel       String?   // Label: "Piste de répétition", "Click track", etc.
+  audioUrl         String?
+  audioLabel       String?
   proPresenterPath String?
   lastUsedAt       DateTime?
   useCount         Int       @default(0)

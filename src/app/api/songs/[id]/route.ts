@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { autoSyncSong } from "@/lib/propresenter/sync";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -41,6 +42,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     include: { arrangements: true },
   });
 
+  autoSyncSong(song).catch(() => {});
   return NextResponse.json(song);
 }
 

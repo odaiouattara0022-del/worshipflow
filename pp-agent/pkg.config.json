@@ -1,0 +1,11 @@
+{
+  "assets": [
+    "proto/**/*.proto",
+    "proto/**"
+  ],
+  "scripts": [
+    "agent.js",
+    "setup.js",
+    "handlers.js"
+  ]
+}
