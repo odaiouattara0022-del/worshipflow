@@ -221,6 +221,8 @@ model PPDevice {
   name        String
   host        String
   port        Int      @default(1025)
+  type        String   @default("propresenter") // "propresenter" | "freeshow" — type de logiciel de sortie
+  config      String?  // JSON: réglages spécifiques au logiciel (ex: freeShowPort, freeShowShowsPath)
   isDefault   Boolean  @default(false)
   libraryPath String   @default("") // Chemin vers Libraries/Default (local ou réseau UNC)
   createdAt   DateTime @default(now())
