@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { executeViaAgent, bridgeErrorResponse } from "@/lib/propresenter/bridge";
+import { getDriver } from "@/lib/output/registry";
 
 /**
  * POST /api/propresenter/control
@@ -29,14 +30,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Aucun appareil configuré" }, { status: 404 });
     }
 
-    const result = await executeViaAgent(
-      (device as any).id,
-      "control",
-      { action, ...params },
-      10_000
-    );
+    const deviceType: string = (device as any).type ?? "propresenter";
+    const driver = getDriver(deviceType);
 
-    return NextResponse.json(result);
+    if (!driver.capabilities.liveControl) {
+      return NextResponse.json(
+        { error: "Contrôle live non supporté par ce logiciel" },
+        { status: 400 }
+      );
+    }
+
+    if (deviceType === "propresenter") {
+      // ProPresenter: keep existing call exactly as today — zero behavior change
+      const result = await executeViaAgent(
+        (device as any).id,
+        "control",
+        { action, ...params },
+        10_000
+      );
+      return NextResponse.json(result);
+    } else {
+      // FreeShow (and any future driver): route through driver
+      let result: unknown;
+      if (action === "next") {
+        result = await driver.next((device as any).id);
+      } else if (action === "previous") {
+        result = await driver.previous((device as any).id);
+      } else if (action === "clear" || action === "clearAll") {
+        result = await driver.clear((device as any).id, params.target);
+      } else {
+        return NextResponse.json(
+          { error: `Action "${action}" non supportée par ce logiciel` },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json(result);
+    }
   } catch (err) {
     return bridgeErrorResponse(err);
   }
