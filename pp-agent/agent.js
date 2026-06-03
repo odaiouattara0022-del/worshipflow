@@ -1,83 +1,195 @@
 /**
- * pp-agent — ProPresenter Local Bridge Agent
+ * pp-agent — ProSendWorship Local Bridge Agent (zero-config)
  * Usage: pp-agent.exe  (or node agent.js)
  *
- * First run: automatically runs setup if no config file found.
- * Subsequent runs: polls ProSendWorship for commands.
+ * Zero-config pairing: the agent generates its own identity, auto-detects whether
+ * ProPresenter or FreeShow is running, announces itself to ProSendWorship, and
+ * waits for an admin to approve it in the app. No setup wizard, no IDs to copy.
+ *
+ * Server URL resolution order (the end user never touches this):
+ *   1. PSW_SERVER environment variable
+ *   2. serveur.txt next to the exe (one line: the URL)
+ *   3. baked default → https://prosendworship.vercel.app
  */
 
 "use strict";
 
 const fs   = require("fs");
+const os   = require("os");
 const path = require("path");
+const { randomUUID } = require("crypto");
+const { detect } = require("./detect");
 
 // ── Path resolution ──────────────────────────────────────────────────────────
-// When packaged with pkg, __dirname points to the snapshot inside the exe.
-// The config file must live NEXT TO the exe, not inside it.
-const IS_PKG  = typeof process.pkg !== "undefined";
+const IS_PKG   = typeof process.pkg !== "undefined";
 const BASE_DIR = IS_PKG ? path.dirname(process.execPath) : __dirname;
+const ID_FILE     = path.join(BASE_DIR, "pp-agent-id.json");
 const CONFIG_FILE = path.join(BASE_DIR, "pp-agent-config.json");
+const SERVER_FILE = path.join(BASE_DIR, "serveur.txt");
 
-// Expose BASE_DIR so handlers.js can use it for proto resolution
+const DEFAULT_SERVER = "https://prosendworship.vercel.app";
+
 process.env.PP_AGENT_BASE_DIR = BASE_DIR;
 
-// ── Entry point ──────────────────────────────────────────────────────────────
-async function main() {
-  if (!fs.existsSync(CONFIG_FILE)) {
-    // First run: launch setup wizard
-    console.log("");
-    console.log("  Première utilisation détectée.");
-    console.log("  Lancement du assistant de configuration...");
-    console.log("");
-    await runSetup();
-    return;
-  }
-
-  await runAgent();
-}
-
-// ── Setup ────────────────────────────────────────────────────────────────────
-async function runSetup() {
-  // setup.js is bundled in the snapshot at __dirname/setup.js
-  require("./setup.js");
-}
-
-// ── Agent loop ───────────────────────────────────────────────────────────────
-// The server long-polls: it holds /poll open for ~8s and answers the instant a
-// command appears. So we don't poll tightly — POLL_MS is only a safety floor to
-// avoid a hot loop if the server ever answers immediately. The fetch timeout
-// must sit safely above the server's 8s hold.
-const POLL_MS   = 250;
+// ── Timing ─────────────────────────────────────────────────────────────────
+const POLL_MS          = 250;
 const FETCH_TIMEOUT_MS = 15_000;
-const MAX_BACK  = 30_000;
-const HB_EVERY  = 60;
+const MAX_BACK         = 30_000;
+const HB_EVERY         = 60;
+const DETECT_RETRY_MS  = 3_000;
+const PAIR_RETRY_MS    = 3_000;
 
 let errors = 0, polls = 0;
 
-async function runAgent() {
-  const config = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
+const DRIVERS = {
+  propresenter: () => require("./drivers/propresenter"),
+  freeshow:     () => require("./drivers/freeshow"),
+};
 
-  const DRIVERS = {
-    propresenter: () => require("./drivers/propresenter"),
-    freeshow:     () => require("./drivers/freeshow"),
-  };
-  const driverType = config.type || "propresenter";
-  const driverFactory = DRIVERS[driverType] || DRIVERS.propresenter;
-  const { dispatch } = driverFactory();
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Identity & server URL ────────────────────────────────────────────────────
+function loadOrCreateInstallId() {
+  try {
+    const { installId } = JSON.parse(fs.readFileSync(ID_FILE, "utf8"));
+    if (installId) return installId;
+  } catch { /* not created yet */ }
+  const installId = randomUUID();
+  fs.writeFileSync(ID_FILE, JSON.stringify({ installId }, null, 2), "utf8");
+  return installId;
+}
+
+function resolveServerUrl() {
+  const fromEnv = (process.env.PSW_SERVER || "").trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  try {
+    const fromFile = fs.readFileSync(SERVER_FILE, "utf8").trim();
+    if (fromFile) return fromFile.replace(/\/$/, "");
+  } catch { /* no override file */ }
+  return DEFAULT_SERVER;
+}
+
+// ── Detection loop ───────────────────────────────────────────────────────────
+async function detectSoftware() {
+  let warned = false;
+  while (true) {
+    const detected = await detect();
+    if (detected) return detected;
+    if (!warned) {
+      console.log("  En attente du logiciel de présentation (ProPresenter ou FreeShow)…");
+      console.log("  Ouvrez le logiciel et activez son API, puis patientez.");
+      warned = true;
+    }
+    await sleep(DETECT_RETRY_MS);
+  }
+}
+
+// ── Pairing loop ─────────────────────────────────────────────────────────────
+// Announce until the admin approves (status 'active' → we receive the agentToken).
+async function pair(serverUrl, installId, hostname, detected) {
+  let waiting = false;
+  while (true) {
+    let data;
+    try {
+      const res = await fetch(`${serverUrl}/api/pp-bridge/announce`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          installId,
+          hostname,
+          type: detected.type,
+          detected: {
+            freeShowPort: detected.freeShowPort,
+            freeShowShowsPath: detected.freeShowShowsPath,
+          },
+        }),
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      data = await res.json();
+    } catch (err) {
+      console.warn(`⚠  Connexion au serveur impossible: ${err.message} — nouvelle tentative…`);
+      await sleep(PAIR_RETRY_MS);
+      continue;
+    }
+
+    if (data.status === "active" && data.agentToken) {
+      return data.agentToken;
+    }
+    if (data.status === "rejected") {
+      console.error("\n❌  Cet appareil a été rejeté dans ProSendWorship. Arrêt.");
+      process.exit(1);
+    }
+    if (!waiting) {
+      console.log("");
+      console.log("  ✓ Appareil détecté et signalé au serveur.");
+      console.log("  → Ouvrez ProSendWorship et cliquez « Approuver » pour cet appareil.");
+      console.log("    (En attente d'approbation…)");
+      waiting = true;
+    }
+    await sleep(PAIR_RETRY_MS);
+  }
+}
+
+// ── Agent loop ───────────────────────────────────────────────────────────────
+async function main() {
+  const installId = loadOrCreateInstallId();
+  const serverUrl = resolveServerUrl();
+  const hostname  = os.hostname();
 
   console.log("");
   console.log("╔══════════════════════════════════════════════════╗");
-  console.log("║      ProSendWorship PP Agent  —  Bridge v1.0        ║");
+  console.log("║      ProSendWorship — Agent local (Bridge v2)      ║");
   console.log("╚══════════════════════════════════════════════════╝");
-  console.log(`  Serveur : ${config.serverUrl}`);
-  console.log(`  Appareil: ${config.deviceId}`);
-  console.log(`  PP API  : http://${config.ppHost}:${config.ppPort}`);
+  console.log(`  Serveur : ${serverUrl}`);
+  console.log(`  PC      : ${hostname}`);
   console.log("─────────────────────────────────────────────────────");
-  console.log("  En attente de commandes...  (Ctrl+C pour quitter)");
-  console.log("");
+
+  // Outer loop: (re-)pair whenever our token becomes invalid (e.g. admin rejects).
+  while (true) {
+    const detected = await detectSoftware();
+    console.log(`  Logiciel détecté : ${detected.type}`);
+
+    const agentToken = await pair(serverUrl, installId, hostname, detected);
+
+    const config = {
+      serverUrl,
+      agentToken,
+      installId,
+      hostname,
+      type: detected.type,
+      ppHost: "127.0.0.1",
+      ppPort: 1025,
+      ...(detected.type === "freeshow"
+        ? { freeShowPort: detected.freeShowPort, freeShowShowsPath: detected.freeShowShowsPath }
+        : {}),
+    };
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
+
+    console.log("");
+    console.log("  ✓ Appareil approuvé — connexion établie.");
+    console.log("  En attente de commandes…  (Ctrl+C pour quitter)");
+    console.log("");
+
+    const reason = await runPollLoop(config);
+    if (reason === "unauthorized") {
+      console.log("\n⚠  Accès révoqué. Nouvelle demande d'appairage…");
+      try { fs.unlinkSync(CONFIG_FILE); } catch { /* ignore */ }
+      errors = 0; polls = 0;
+      continue;
+    }
+    break;
+  }
+}
+
+// Returns "unauthorized" if the token stops working, so main() can re-pair.
+async function runPollLoop(config) {
+  const driverFactory = DRIVERS[config.type] || DRIVERS.propresenter;
+  const { dispatch } = driverFactory();
 
   while (true) {
-    await poll(config, dispatch);
+    const reason = await poll(config, dispatch);
+    if (reason === "unauthorized") return reason;
     await sleep(POLL_MS);
   }
 }
@@ -90,10 +202,7 @@ async function poll(config, dispatch) {
       headers: { Authorization: `Bearer ${agentToken}` },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (res.status === 401) {
-      console.error("\n❌  Token invalide. Supprimez pp-agent-config.json et relancez l'agent.");
-      process.exit(1);
-    }
+    if (res.status === 401) return "unauthorized";
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     data = await res.json();
     errors = 0;
@@ -151,7 +260,5 @@ async function postResult(config, id, result, error) {
     console.error(`⚠  Résultat non envoyé: ${e.message}`);
   }
 }
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 main().catch(e => { console.error("Erreur fatale:", e.message); process.exit(1); });

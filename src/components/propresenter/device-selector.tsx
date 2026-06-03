@@ -16,6 +16,8 @@ interface PPDeviceInfo {
   libraryPath: string;
   online: boolean;
   version: string | null;
+  status?: string;
+  hostname?: string | null;
 }
 
 interface DeviceSelectorProps {
@@ -38,7 +40,10 @@ export function DeviceSelector({
     try {
       const res = await fetch("/api/propresenter/devices");
       const data = await res.json();
-      const newDevices: PPDeviceInfo[] = data.devices ?? [];
+      // Only approved devices are selectable for sending/controlling.
+      const newDevices: PPDeviceInfo[] = (data.devices ?? []).filter(
+        (d: PPDeviceInfo) => (d.status ?? "active") === "active"
+      );
       setDevices(newDevices);
 
       // Auto-select default or first online device
@@ -266,6 +271,28 @@ export function DeviceManager() {
     }
   }
 
+  async function handleApprove(id: string, name: string) {
+    try {
+      const res = await fetch(`/api/propresenter/devices/${id}/approve`, { method: "POST" });
+      if (!res.ok) { toast.error("Erreur lors de l'approbation"); return; }
+      toast.success(`« ${name} » approuvé`);
+      fetchDevices();
+    } catch {
+      toast.error("Erreur lors de l'approbation");
+    }
+  }
+
+  async function handleReject(id: string, name: string) {
+    try {
+      const res = await fetch(`/api/propresenter/devices/${id}/reject`, { method: "POST" });
+      if (!res.ok) { toast.error("Erreur lors du rejet"); return; }
+      toast.success(`« ${name} » rejeté`);
+      fetchDevices();
+    } catch {
+      toast.error("Erreur lors du rejet");
+    }
+  }
+
   async function handleScan() {
     setScanning(true);
     try {
@@ -345,15 +372,53 @@ export function DeviceManager() {
     return <p className="text-sm text-muted-foreground">Chargement…</p>;
   }
 
+  const pendingDevices = devices.filter((d) => d.status === "pending");
+  const activeDevices = devices.filter((d) => (d.status ?? "active") === "active");
+
   return (
     <div className="space-y-4">
-      {devices.length === 0 && !showAdd && (
+      {pendingDevices.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-amber-600">
+            Appareils en attente d&apos;approbation
+          </h4>
+          {pendingDevices.map((d) => (
+            <div
+              key={d.id}
+              className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 flex items-center gap-3"
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+              <div className="flex-1 min-w-0">
+                <span className="font-medium">{d.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {d.type === "freeshow" ? "FreeShow" : "ProPresenter"} détecté
+                  {d.hostname ? ` sur ${d.hostname}` : ""} — veut se connecter
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button size="sm" onClick={() => handleApprove(d.id, d.name)}>
+                  Approuver
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleReject(d.id, d.name)}
+                >
+                  Rejeter
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeDevices.length === 0 && pendingDevices.length === 0 && !showAdd && (
         <p className="text-sm text-muted-foreground">
           Aucun appareil de sortie configuré.
         </p>
       )}
 
-      {devices.map((d) => (
+      {activeDevices.map((d) => (
         <div
           key={d.id}
           className="rounded-md border border-border p-3 space-y-2"
@@ -443,13 +508,12 @@ export function DeviceManager() {
       <div className="rounded-md border border-dashed border-border p-4 space-y-3 bg-muted/30">
         <h4 className="text-sm font-medium flex items-center gap-2">
           <Download className="h-4 w-4" />
-          Installer sur un autre ordinateur
+          Connecter un ordinateur (ProPresenter ou FreeShow)
         </h4>
         <ol className="text-xs text-muted-foreground space-y-1 list-none">
-          <li>① Ajoutez un appareil ci-dessus et copiez son ID</li>
-          <li>② Téléchargez l&apos;agent et copiez le ZIP sur le PC ProPresenter</li>
-          <li>③ Extrayez le ZIP et double-cliquez sur <code className="bg-muted px-1 py-0.5 rounded">install.bat</code></li>
-          <li>④ L&apos;installation est automatique — collez l&apos;ID quand demandé</li>
+          <li>① Sur le PC, ouvrez ProPresenter ou FreeShow (avec son API activée)</li>
+          <li>② Téléchargez l&apos;agent ci-dessous et double-cliquez dessus</li>
+          <li>③ L&apos;appareil apparaît ici dans « En attente d&apos;approbation » — cliquez <strong>Approuver</strong></li>
         </ol>
         <a
           href="/downloads/pp-agent.exe"
@@ -457,10 +521,10 @@ export function DeviceManager() {
           className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           <Download className="h-3.5 w-3.5" />
-          Télécharger pp-agent.exe
+          Télécharger l&apos;agent
         </a>
         <p className="text-xs text-muted-foreground mt-1">
-          45 MB · Aucune installation requise · Double-cliquez et c&apos;est tout
+          Aucune installation, aucun code à saisir · Double-cliquez et approuvez ici
         </p>
       </div>
 

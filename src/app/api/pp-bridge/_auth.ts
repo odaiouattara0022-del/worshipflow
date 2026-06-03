@@ -16,5 +16,12 @@ export async function resolveDevice(request: NextRequest) {
     where: { agentToken: token },
   });
 
-  return device ?? null;
+  if (!device) return null;
+
+  // A device that hasn't been approved (or was rejected) must not be able to
+  // poll or receive commands. Legacy rows have no status → treated as active.
+  const status = (device as any).status ?? "active";
+  if (status !== "active") return null;
+
+  return device;
 }

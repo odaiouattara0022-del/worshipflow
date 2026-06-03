@@ -6,6 +6,7 @@
   "scripts": [
     "agent.js",
     "setup.js",
+    "detect.js",
     "drivers/propresenter.js",
     "drivers/freeshow.js"
   ]
