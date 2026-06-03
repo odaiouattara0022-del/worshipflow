@@ -46,6 +46,17 @@ test("a ProPresenter pending device defaults the port to 1025", () => {
   expect(d.host).toBe("127.0.0.1");
 });
 
+test("an OpenLP pending device uses its label, port 4316, and config", () => {
+  const d = newPendingDevice(
+    { installId: "o", hostname: "PC3", type: "openlp", detected: { openLpPort: 4316 } },
+    "t"
+  );
+  expect(d.type).toBe("openlp");
+  expect(d.name).toBe("OpenLP — PC3");
+  expect(d.port).toBe(4316);
+  expect(d.config).toBe(JSON.stringify({ openLpPort: "4316" }));
+});
+
 test("announce response withholds the token until the device is active", () => {
   expect(announceResponse({ status: "pending", agentToken: "secret" })).toEqual({ status: "pending" });
   expect(announceResponse({ status: "rejected", agentToken: "secret" })).toEqual({ status: "rejected" });

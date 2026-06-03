@@ -15,6 +15,7 @@ const { execSync } = require("child_process");
 
 const FREESHOW_PORT = 5506;
 const PROPRESENTER_PORT = 1025;
+const OPENLP_PORT = 4316;
 
 function probePort(host, port, timeoutMs = 800) {
   return new Promise((resolve) => {
@@ -63,13 +64,15 @@ function freeShowDetails() {
  */
 async function detect(host = "127.0.0.1") {
   if (await probePort(host, FREESHOW_PORT)) return freeShowDetails();
+  if (await probePort(host, OPENLP_PORT)) return { type: "openlp", openLpPort: OPENLP_PORT };
   if (await probePort(host, PROPRESENTER_PORT)) return { type: "propresenter" };
 
   // Ports closed — the app may be open without its API enabled yet.
   if (processRunning("FreeShow.exe")) return freeShowDetails();
+  if (processRunning("OpenLP.exe")) return { type: "openlp", openLpPort: OPENLP_PORT };
   if (processRunning("ProPresenter.exe")) return { type: "propresenter" };
 
   return null;
 }
 
-module.exports = { detect, probePort, FREESHOW_PORT, PROPRESENTER_PORT };
+module.exports = { detect, probePort, FREESHOW_PORT, PROPRESENTER_PORT, OPENLP_PORT };

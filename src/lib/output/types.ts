@@ -1,4 +1,4 @@
-export type OutputType = "propresenter" | "freeshow";
+export type OutputType = "propresenter" | "freeshow" | "openlp";
 
 export interface Capabilities {
   sendSong: boolean;

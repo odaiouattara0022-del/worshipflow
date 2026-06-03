@@ -150,6 +150,12 @@ export function DeviceSelector({
   );
 }
 
+function softwareLabel(type?: string): string {
+  if (type === "freeshow") return "FreeShow";
+  if (type === "openlp") return "OpenLP";
+  return "ProPresenter";
+}
+
 function CopyIdButton({ id }: { id: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -218,9 +224,12 @@ export function DeviceManager() {
       return;
     }
     try {
-      const config = newType === "freeshow"
-        ? JSON.stringify({ freeShowPort: newFreeShowPort.trim() || "5506", freeShowShowsPath: newFreeShowShowsPath.trim() })
-        : null;
+      const config =
+        newType === "freeshow"
+          ? JSON.stringify({ freeShowPort: newFreeShowPort.trim() || "5506", freeShowShowsPath: newFreeShowShowsPath.trim() })
+          : newType === "openlp"
+          ? JSON.stringify({ openLpPort: "4316" })
+          : null;
       const res = await fetch("/api/propresenter/devices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -397,7 +406,7 @@ export function DeviceManager() {
               <div className="flex-1 min-w-0">
                 <span className="font-medium">{d.name}</span>
                 <span className="block text-xs text-muted-foreground">
-                  {d.type === "freeshow" ? "FreeShow" : "ProPresenter"} détecté
+                  {softwareLabel(d.type)} détecté
                   {d.hostname ? ` sur ${d.hostname}` : ""} — veut se connecter
                 </span>
               </div>
@@ -514,10 +523,10 @@ export function DeviceManager() {
       <div className="rounded-md border border-dashed border-border p-4 space-y-3 bg-muted/30">
         <h4 className="text-sm font-medium flex items-center gap-2">
           <Download className="h-4 w-4" />
-          Connecter un ordinateur (ProPresenter ou FreeShow)
+          Connecter un ordinateur (ProPresenter, FreeShow ou OpenLP)
         </h4>
         <ol className="text-xs text-muted-foreground space-y-1 list-none">
-          <li>① Sur le PC, ouvrez ProPresenter ou FreeShow (avec son API activée)</li>
+          <li>① Sur le PC, ouvrez ProPresenter, FreeShow ou OpenLP (avec son API/remote activé)</li>
           <li>② Téléchargez l&apos;agent ci-dessous et double-cliquez dessus</li>
           <li>③ L&apos;appareil apparaît ici dans « En attente d&apos;approbation » — cliquez <strong>Approuver</strong></li>
         </ol>
@@ -548,6 +557,7 @@ export function DeviceManager() {
               >
                 <option value="propresenter">ProPresenter</option>
                 <option value="freeshow">FreeShow</option>
+                <option value="openlp">OpenLP</option>
               </select>
             </div>
             <input

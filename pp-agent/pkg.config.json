@@ -8,6 +8,7 @@
     "setup.js",
     "detect.js",
     "drivers/propresenter.js",
-    "drivers/freeshow.js"
+    "drivers/freeshow.js",
+    "drivers/openlp.js"
   ]
 }

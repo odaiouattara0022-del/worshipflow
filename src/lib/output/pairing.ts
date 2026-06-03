@@ -7,17 +7,24 @@ export interface AnnounceInput {
   installId: string;
   hostname?: string | null;
   type?: string | null;
-  detected?: { freeShowPort?: number | string | null; freeShowShowsPath?: string | null } | null;
+  detected?: {
+    freeShowPort?: number | string | null;
+    freeShowShowsPath?: string | null;
+    openLpPort?: number | string | null;
+  } | null;
 }
 
 const SOFTWARE_LABELS: Record<string, string> = {
   propresenter: "ProPresenter",
   freeshow: "FreeShow",
+  openlp: "OpenLP",
 };
+
+const KNOWN_TYPES = new Set(["propresenter", "freeshow", "openlp"]);
 
 function normalizeType(type?: string | null): string {
   const t = (type ?? "").toLowerCase();
-  return t === "freeshow" ? "freeshow" : "propresenter";
+  return KNOWN_TYPES.has(t) ? t : "propresenter";
 }
 
 /** Human-friendly device name shown on the approval card, e.g. "FreeShow — PC-LOUANGE". */
@@ -29,11 +36,15 @@ export function deviceNameFor(type: string | null | undefined, hostname?: string
 
 /** Build the per-software `config` JSON string from what the agent detected (null when nothing to store). */
 export function buildConfig(input: AnnounceInput): string | null {
-  if (normalizeType(input.type) !== "freeshow") return null;
+  const type = normalizeType(input.type);
   const d = input.detected ?? {};
   const config: Record<string, unknown> = {};
-  if (d.freeShowPort != null && d.freeShowPort !== "") config.freeShowPort = String(d.freeShowPort);
-  if (d.freeShowShowsPath) config.freeShowShowsPath = String(d.freeShowShowsPath);
+  if (type === "freeshow") {
+    if (d.freeShowPort != null && d.freeShowPort !== "") config.freeShowPort = String(d.freeShowPort);
+    if (d.freeShowShowsPath) config.freeShowShowsPath = String(d.freeShowShowsPath);
+  } else if (type === "openlp") {
+    if (d.openLpPort != null && d.openLpPort !== "") config.openLpPort = String(d.openLpPort);
+  }
   return Object.keys(config).length ? JSON.stringify(config) : null;
 }
 
@@ -43,13 +54,13 @@ export function buildConfig(input: AnnounceInput): string | null {
  */
 export function newPendingDevice(input: AnnounceInput, agentToken: string) {
   const type = normalizeType(input.type);
-  const freeShowPort = input.detected?.freeShowPort;
+  const d = input.detected ?? {};
   // host/port are required NOT NULL columns. The agent runs ON the presentation
   // PC, so the software is always reachable at localhost from the agent's side.
-  const port =
-    type === "freeshow" && freeShowPort != null && freeShowPort !== ""
-      ? Number(freeShowPort)
-      : 1025;
+  // Default port per software: ProPresenter 1025, FreeShow 5506, OpenLP 4316.
+  let port = 1025;
+  if (type === "freeshow") port = Number(d.freeShowPort) || 5506;
+  else if (type === "openlp") port = Number(d.openLpPort) || 4316;
   return {
     name: deviceNameFor(input.type, input.hostname),
     type,

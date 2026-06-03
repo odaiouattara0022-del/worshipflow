@@ -51,6 +51,7 @@ let errors = 0, polls = 0;
 const DRIVERS = {
   propresenter: () => require("./drivers/propresenter"),
   freeshow:     () => require("./drivers/freeshow"),
+  openlp:       () => require("./drivers/openlp"),
 };
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -228,6 +229,9 @@ async function main() {
       ppPort: 1025,
       ...(detected.type === "freeshow"
         ? { freeShowPort: detected.freeShowPort, freeShowShowsPath: detected.freeShowShowsPath }
+        : {}),
+      ...(detected.type === "openlp"
+        ? { openLpPort: detected.openLpPort }
         : {}),
     };
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
