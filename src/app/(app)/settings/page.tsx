@@ -38,7 +38,7 @@ const TABS = [
   { key: "general",      label: "Général",         icon: Settings },
   { key: "church",       label: "Profil d'église",  icon: Building2, adminOnly: true },
   { key: "templates",    label: "Modèles",          icon: Settings, adminOnly: true },
-  { key: "propresenter", label: "ProPresenter",     icon: Monitor },
+  { key: "propresenter", label: "Présentation",     icon: Monitor },
   { key: "roles",        label: "Rôles de service", icon: Users, adminOnly: true },
   { key: "notifications",label: "Notifications",    icon: Bell },
   { key: "appearance",   label: "Apparence",        icon: Palette },
@@ -431,7 +431,7 @@ export default function SettingsPage() {
         <div className="space-y-4 max-w-2xl">
           <Card className="p-6">
             <h2 className="text-sm font-semibold mb-1">Appareils connectés</h2>
-            <p className="text-xs text-muted-foreground mb-4">L&apos;agent pp-agent.exe gère la connexion. Téléchargez-le depuis la section Paramètres → ProPresenter d&apos;un appareil pour l&apos;installer.</p>
+            <p className="text-xs text-muted-foreground mb-4">L&apos;agent gère la connexion à votre logiciel de présentation (ProPresenter, FreeShow…). Téléchargez-le depuis la section Présentation pour l&apos;installer.</p>
             <DeviceManager />
           </Card>
         </div>
@@ -689,7 +689,7 @@ export default function SettingsPage() {
             <div>
               <Label htmlFor="ccliLicense">Numéro de licence</Label>
               <Input id="ccliLicense" value={settings.ccliLicense} onChange={e => handleChange("ccliLicense", e.target.value)} placeholder="ex: 1234567" className="mt-1" />
-              <p className="text-xs text-muted-foreground mt-1">Affiché dans ProPresenter lors de l&apos;envoi des chants.</p>
+              <p className="text-xs text-muted-foreground mt-1">Affiché sur les diapos lors de l&apos;envoi des chants.</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button size="sm" onClick={handleSave} disabled={saving}>{saving ? "…" : "Enregistrer"}</Button>

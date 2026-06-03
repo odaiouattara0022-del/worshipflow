@@ -222,7 +222,7 @@ export function LyricsEditor({
         /* ===== RAW TEXT MODE ===== */
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
-            Séparez chaque couplet/refrain par une ligne vide. Chaque bloc = 1 slide dans ProPresenter.
+            Séparez chaque couplet/refrain par une ligne vide. Chaque bloc = 1 diapo dans le logiciel de présentation.
           </p>
           <textarea
             value={fullText}

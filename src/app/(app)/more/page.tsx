@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const moreItems = [
-  { href: "/propresenter", label: "ProPresenter", icon: "📽️" },
+  { href: "/propresenter", label: "Présentation", icon: "📽️" },
   { href: "/live", label: "Live Control", icon: "🎛️" },
   { href: "/rehearsal", label: "Répétition", icon: "🎸" },
   { href: "/calendar", label: "Calendrier", icon: "📅" },

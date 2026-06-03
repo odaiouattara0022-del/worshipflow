@@ -197,7 +197,7 @@ export function SendSongToPP({ songId, songTitle }: SendSongToPPProps) {
         toast.success(data.message);
       }
     } catch {
-      toast.error("Impossible de contacter ProPresenter");
+      toast.error("Impossible de contacter le logiciel de présentation");
     } finally {
       setSending(false);
     }

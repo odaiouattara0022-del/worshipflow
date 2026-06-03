@@ -219,7 +219,7 @@ export default function LiveControlPage() {
         subtitle={
           connected
             ? `Connecté — ${presentationName || "Aucune présentation"}`
-            : "Non connecté à ProPresenter"
+            : "Non connecté au logiciel de présentation"
         }
         action={
           <div className="flex items-center gap-3">

@@ -25,9 +25,9 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: "ProPresenter",
+    label: "Présentation",
     items: [
-      { href: "/propresenter", label: "Connexion",        icon: Monitor },
+      { href: "/propresenter", label: "Appareils",         icon: Monitor },
       { href: "/live",         label: "Live Control",     icon: Radio },
       { href: "/rehearsal",    label: "Répétition",       icon: Mic2 },
     ],

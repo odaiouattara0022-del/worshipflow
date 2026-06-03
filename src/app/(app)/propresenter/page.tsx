@@ -38,6 +38,9 @@ export default function ProPresenterPage() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [deviceStatus, setDeviceStatus] = useState<DeviceStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
+  // The library-sync / .pro import features are ProPresenter-specific; only show
+  // them when at least one ProPresenter device is configured.
+  const [hasProPresenter, setHasProPresenter] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -47,7 +50,9 @@ export default function ProPresenterPage() {
       ]);
       const status = await statusRes.json();
       const devicesData = await devicesRes.json();
-      const defaultDevice = (devicesData.devices ?? []).find((d: any) => d.isDefault) ?? devicesData.devices?.[0];
+      const allDevices = devicesData.devices ?? [];
+      setHasProPresenter(allDevices.some((d: any) => (d.type ?? "propresenter") === "propresenter"));
+      const defaultDevice = allDevices.find((d: any) => d.isDefault) ?? allDevices[0];
       setDeviceStatus({
         online: status.connected ?? false,
         lastSeen: defaultDevice?.lastSeen ?? null,
@@ -101,7 +106,7 @@ export default function ProPresenterPage() {
 
   return (
     <div>
-      <Header title="ProPresenter" subtitle="Connexion et synchronisation" action={<PPStatusBadge />} />
+      <Header title="Présentation" subtitle="Logiciels de présentation (ProPresenter, FreeShow…)" action={<PPStatusBadge />} />
 
       <div className="grid gap-6 md:grid-cols-2">
 
@@ -118,7 +123,7 @@ export default function ProPresenterPage() {
               )}
               Statut de connexion
             </CardTitle>
-            <CardDescription>État de l&apos;agent et de ProPresenter</CardDescription>
+            <CardDescription>État de l&apos;agent et du logiciel de présentation</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {deviceStatus && (
@@ -128,7 +133,7 @@ export default function ProPresenterPage() {
                   <span className="font-medium">{deviceStatus.name ?? "—"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">ProPresenter</span>
+                  <span className="text-muted-foreground">Logiciel</span>
                   <span className={deviceStatus.online ? "text-green-600 font-medium" : "text-red-500"}>
                     {deviceStatus.online ? `Connecté${deviceStatus.version ? ` (${deviceStatus.version})` : ""}` : "Non connecté"}
                   </span>
@@ -148,7 +153,9 @@ export default function ProPresenterPage() {
           </CardContent>
         </Card>
 
-        {/* Synchronisation bibliothèque */}
+        {hasProPresenter && (
+        <>
+        {/* Synchronisation bibliothèque — ProPresenter uniquement (.pro) */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -226,12 +233,14 @@ export default function ProPresenterPage() {
             )}
           </CardContent>
         </Card>
+        </>
+        )}
 
         {/* Gestion des appareils */}
         <Card>
           <CardHeader>
-            <CardTitle>Appareils ProPresenter</CardTitle>
-            <CardDescription>Gérer les connexions aux ordinateurs ProPresenter</CardDescription>
+            <CardTitle>Appareils</CardTitle>
+            <CardDescription>Gérer les ordinateurs de présentation (ProPresenter, FreeShow…)</CardDescription>
           </CardHeader>
           <CardContent>
             <DeviceManager />

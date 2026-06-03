@@ -183,7 +183,7 @@ export function SendToPPButton({ serviceId }: SendToPPButtonProps) {
         toast.warning(data.message || "La playlist n'a pas pu être mise à jour");
       }
     } catch {
-      toast.error("Impossible de contacter ProPresenter");
+      toast.error("Impossible de contacter le logiciel de présentation");
     } finally {
       setSending(false);
     }
@@ -288,7 +288,7 @@ export function SendToPPButton({ serviceId }: SendToPPButtonProps) {
           </>
         )}
         <Button variant="outline" onClick={handleSend} disabled={sending}>
-          {sending ? "Envoi en cours…" : "Envoyer à ProPresenter"}
+          {sending ? "Envoi en cours…" : "Envoyer à la présentation"}
         </Button>
       </div>
     </div>

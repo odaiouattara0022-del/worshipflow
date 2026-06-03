@@ -243,7 +243,7 @@ export function SongForm({ trigger, song }: SongFormProps) {
                     onChange={(e) => setForm({ ...form, copyrightDisplay: e.target.checked })}
                     className="rounded border-input"
                   />
-                  Afficher le copyright sur les slides ProPresenter
+                  Afficher le copyright sur les diapos
                 </label>
               </div>
             )}

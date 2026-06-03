@@ -96,7 +96,7 @@ export default async function DashboardPage() {
           {[
             { href: "/calendar", label: "Nouveau service", icon: Plus, desc: "Planifier" },
             { href: "/songs",    label: "Bibliothèque",   icon: Music2,      desc: "Chants" },
-            { href: "/live",     label: "Live Control",   icon: Bell,        desc: "ProPresenter" },
+            { href: "/live",     label: "Live Control",   icon: Bell,        desc: "Présentation" },
             { href: "/themes",   label: "Thèmes",         icon: CalendarDays, desc: "Catégories" },
           ].map((a) => (
             <Link
