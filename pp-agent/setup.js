@@ -129,8 +129,9 @@ async function main() {
     // ── FreeShow ─────────────────────────────────────────────
     console.log("");
     console.log("  Configuration FreeShow...");
-    const fsPortRaw = await ask("Port FreeShow", "5505");
-    freeShowPort = parseInt(fsPortRaw, 10) || 5505;
+    console.log("  (Dans FreeShow : Paramètres → Connexions → activez l'API. Port REST par défaut : 5506.)");
+    const fsPortRaw = await ask("Port API REST FreeShow", "5506");
+    freeShowPort = parseInt(fsPortRaw, 10) || 5506;
     freeShowShowsPath = await ask("Dossier Shows FreeShow", path.join(os.homedir(), "Documents", "FreeShow", "Shows"));
     if (!freeShowShowsPath) {
       console.error("\n  ERREUR : Le dossier Shows FreeShow est requis.");

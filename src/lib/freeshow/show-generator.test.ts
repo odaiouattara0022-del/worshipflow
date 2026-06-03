@@ -22,12 +22,31 @@ test("layout orders all slides", () => {
   expect(show.layouts[layoutId].slides).toHaveLength(2);
 });
 
-test("first slide carries its lyric lines", () => {
+test("activeLayout points at the generated layout", () => {
   const show = generateShow(song);
-  const firstSlideId = Object.keys(show.slides)[0];
-  const text = JSON.stringify(show.slides[firstSlideId]);
+  const layoutId = Object.keys(show.layouts)[0];
+  // Without this, FreeShow loads the show but renders no slides.
+  expect(show.settings.activeLayout).toBe(layoutId);
+});
+
+test("first slide carries its lyric lines as typed text items", () => {
+  const show = generateShow(song);
+  const firstSlide = show.slides[Object.keys(show.slides)[0]];
+  expect(firstSlide.items[0].type).toBe("text");
+  const text = JSON.stringify(firstSlide.items[0].lines);
   expect(text).toContain("Amazing grace how sweet");
   expect(text).toContain("That saved a wretch");
+});
+
+test("meta carries the title and provided song metadata", () => {
+  const show = generateShow({
+    ...song,
+    meta: { author: "John Newton", ccli: "12345", year: 1779 },
+  });
+  expect(show.meta.title).toBe("Amazing Grace");
+  expect(show.meta.author).toBe("John Newton");
+  expect(show.meta.CCLI).toBe("12345");
+  expect(show.meta.year).toBe("1779");
 });
 
 test("blank-only lyrics produce zero slides and an empty layout", () => {

@@ -81,7 +81,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     } else {
       // FreeShow (and any future driver): generate show payload and send via driver
-      const payload = generateShow({ title: song.title as string, lyrics: song.lyrics as string });
+      const payload = generateShow({
+        title: song.title as string,
+        lyrics: song.lyrics as string,
+        meta: {
+          author: (song as any).author ?? null,
+          artist: (song as any).artistCredits ?? null,
+          publisher: (song as any).publisher ?? null,
+          ccli: (song as any).ccliNumber ?? null,
+          year: (song as any).copyrightYear ?? null,
+        },
+      });
       await driver.sendSong((device as any).id, payload);
 
       // Log usage (fire-and-forget)

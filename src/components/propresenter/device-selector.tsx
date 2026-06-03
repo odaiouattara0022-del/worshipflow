@@ -176,7 +176,7 @@ export function DeviceManager() {
   const [newPort, setNewPort] = useState("12345");
   const [newLibPath, setNewLibPath] = useState("");
   const [newType, setNewType] = useState("propresenter");
-  const [newFreeShowPort, setNewFreeShowPort] = useState("5505");
+  const [newFreeShowPort, setNewFreeShowPort] = useState("5506");
   const [newFreeShowShowsPath, setNewFreeShowShowsPath] = useState("");
 
   const fetchDevices = useCallback(async () => {
@@ -208,7 +208,7 @@ export function DeviceManager() {
     }
     try {
       const config = newType === "freeshow"
-        ? JSON.stringify({ freeShowPort: newFreeShowPort.trim() || "5505", freeShowShowsPath: newFreeShowShowsPath.trim() })
+        ? JSON.stringify({ freeShowPort: newFreeShowPort.trim() || "5506", freeShowShowsPath: newFreeShowShowsPath.trim() })
         : null;
       const res = await fetch("/api/propresenter/devices", {
         method: "POST",
@@ -233,7 +233,7 @@ export function DeviceManager() {
       setNewPort("12345");
       setNewLibPath("");
       setNewType("propresenter");
-      setNewFreeShowPort("5505");
+      setNewFreeShowPort("5506");
       setNewFreeShowShowsPath("");
       setShowAdd(false);
       fetchDevices();
@@ -507,12 +507,13 @@ export function DeviceManager() {
             {newType === "freeshow" && (
               <div className="space-y-2 rounded-md bg-muted/40 px-3 py-2.5">
                 <p className="text-xs font-medium text-muted-foreground">Paramètres FreeShow</p>
+                <p className="text-[11px] text-muted-foreground">Dans FreeShow : Paramètres → Connexions → activez l’API (port REST 5506).</p>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="col-span-1">
-                    <label className="text-xs text-muted-foreground block mb-1">Port FreeShow</label>
+                    <label className="text-xs text-muted-foreground block mb-1">Port API REST</label>
                     <input
                       type="text"
-                      placeholder="5505"
+                      placeholder="5506"
                       value={newFreeShowPort}
                       onChange={(e) => setNewFreeShowPort(e.target.value)}
                       className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -558,7 +559,7 @@ export function DeviceManager() {
               onClick={() => {
                 setShowAdd(false);
                 setNewType("propresenter");
-                setNewFreeShowPort("5505");
+                setNewFreeShowPort("5506");
                 setNewFreeShowShowsPath("");
               }}
             >
