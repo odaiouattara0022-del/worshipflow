@@ -24,7 +24,10 @@ async function writeShow(config, payload) {
   // payload is the FreeShow .show JSON from src/lib/freeshow/show-generator.ts
   const dir = config.freeShowShowsPath;
   if (!dir) throw new Error("freeShowShowsPath manquant dans la config");
-  const file = path.join(dir, `${payload.name}.show`);
+  // Sanitize the title before using it as a filename — strip path separators
+  // and other unsafe chars so a song title can't escape the Shows folder.
+  const safeName = String(payload.name).replace(/[^\w\-. ]/g, "_").trim() || "show";
+  const file = path.join(dir, `${safeName}.show`);
   fs.writeFileSync(file, JSON.stringify([payload.name, payload]), "utf8");
   return { ok: true, file };
 }

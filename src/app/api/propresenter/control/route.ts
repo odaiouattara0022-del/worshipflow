@@ -57,7 +57,10 @@ export async function POST(request: NextRequest) {
       } else if (action === "previous") {
         result = await driver.previous((device as any).id);
       } else if (action === "clear" || action === "clearAll") {
-        result = await driver.clear((device as any).id, params.target);
+        // UI sends the clear scope as `layer` (presentation/media); the driver
+        // contract calls it `target`. Accept either so the live "Clear ..."
+        // buttons map through to FreeShow instead of collapsing to clear_all.
+        result = await driver.clear((device as any).id, params.target ?? params.layer);
       } else {
         return NextResponse.json(
           { error: `Action "${action}" non supportée par ce logiciel` },

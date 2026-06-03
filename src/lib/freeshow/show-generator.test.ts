@@ -29,3 +29,15 @@ test("first slide carries its lyric lines", () => {
   expect(text).toContain("Amazing grace how sweet");
   expect(text).toContain("That saved a wretch");
 });
+
+test("blank-only lyrics produce zero slides and an empty layout", () => {
+  const show = generateShow({ title: "Empty", lyrics: "\n  \n\n\t\n" });
+  expect(Object.keys(show.slides)).toHaveLength(0);
+  const layoutId = Object.keys(show.layouts)[0];
+  expect(show.layouts[layoutId].slides).toHaveLength(0);
+});
+
+test("multiple consecutive blank lines collapse to a single section break", () => {
+  const show = generateShow({ title: "Gaps", lyrics: "Line A\n\n\n\nLine B" });
+  expect(Object.keys(show.slides)).toHaveLength(2);
+});

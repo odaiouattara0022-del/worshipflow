@@ -87,7 +87,11 @@ export async function POST(request: NextRequest) {
       // Log usage (fire-and-forget)
       prisma.songUsageLog.create({ data: { songId: song.id } }).catch(() => {});
 
-      return NextResponse.json({ success: true, sent: song.title });
+      return NextResponse.json({
+        success: true,
+        sent: song.title,
+        message: `Chant « ${song.title} » envoyé`,
+      });
     }
   } catch (err) {
     return bridgeErrorResponse(err);
