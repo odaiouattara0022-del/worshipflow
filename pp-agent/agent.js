@@ -26,10 +26,16 @@ const BASE_DIR = IS_PKG ? path.dirname(process.execPath) : __dirname;
 const ID_FILE     = path.join(BASE_DIR, "pp-agent-id.json");
 const CONFIG_FILE = path.join(BASE_DIR, "pp-agent-config.json");
 const SERVER_FILE = path.join(BASE_DIR, "serveur.txt");
+const AUTOSTART_MARKER = path.join(BASE_DIR, ".autostart-installed");
 
 const DEFAULT_SERVER = "https://prosendworship.vercel.app";
 
 process.env.PP_AGENT_BASE_DIR = BASE_DIR;
+
+// The watchdog relaunches us hidden with --bg. A plain double-click has no --bg:
+// that run pairs, installs the background autostart, then hands off to a hidden
+// instance and closes its own window so nothing stays visible.
+const BACKGROUND = process.argv.includes("--bg");
 
 // ── Timing ─────────────────────────────────────────────────────────────────
 const POLL_MS          = 250;
@@ -67,6 +73,60 @@ function resolveServerUrl() {
     if (fromFile) return fromFile.replace(/\/$/, "");
   } catch { /* no override file */ }
   return DEFAULT_SERVER;
+}
+
+// ── Background autostart (Windows, packaged exe only) ────────────────────────
+// Installs a hidden "watchdog" that relaunches the agent (hidden, with --bg)
+// whenever FreeShow/ProPresenter is running and the agent isn't. Registered to
+// run at logon, and started immediately. Done once (marker file).
+function installAutostart() {
+  if (process.platform !== "win32" || !IS_PKG) return "skip";
+  try {
+    const { execSync } = require("child_process");
+    const exePath  = process.execPath;
+    const exeDir   = path.dirname(exePath);
+    const taskName = "ProSendWorship Agent";
+    const watchdogPath = path.join(exeDir, "_watchdog.vbs");
+
+    const watchedProcessQuery =
+      `"SELECT * FROM Win32_Process WHERE Name LIKE 'FreeShow%' OR Name LIKE 'ProPresenter%'"`;
+    const watchdogContent = [
+      `Dim shell, wmi, agentDir`,
+      `Set shell = CreateObject("WScript.Shell")`,
+      `agentDir = "${exeDir.replace(/\\/g, "\\\\")}"`,
+      `Set wmi = GetObject("winmgmts:\\\\\\\\.\\\\root\\\\cimv2")`,
+      `Do While True`,
+      `  Dim appRunning, agentRunning`,
+      `  appRunning = False : agentRunning = False`,
+      `  Set appProcs = wmi.ExecQuery(${watchedProcessQuery})`,
+      `  appRunning = (appProcs.Count > 0)`,
+      `  Set agentProcs = wmi.ExecQuery("SELECT * FROM Win32_Process WHERE Name = 'pp-agent.exe'")`,
+      `  agentRunning = (agentProcs.Count > 0)`,
+      `  If appRunning And Not agentRunning Then`,
+      `    shell.CurrentDirectory = agentDir`,
+      `    shell.Run Chr(34) & agentDir & "\\pp-agent.exe" & Chr(34) & " --bg", 0, False`,
+      `  End If`,
+      `  WScript.Sleep 5000`,
+      `Loop`,
+    ].join("\n");
+    fs.writeFileSync(watchdogPath, watchdogContent, "utf8");
+
+    try { execSync(`schtasks /delete /tn "${taskName}" /f`, { stdio: "ignore" }); } catch { /* none yet */ }
+    execSync(
+      `schtasks /create /tn "${taskName}" /tr "wscript.exe \\"${watchdogPath}\\"" /sc ONLOGON /delay 0000:10 /rl HIGHEST /f /ru "${os.userInfo().username}"`,
+      { stdio: "ignore" }
+    );
+
+    // Start the watchdog now (hidden) only once, so repeated double-clicks don't
+    // stack watchdog processes. It relaunches us hidden after this window closes.
+    if (!fs.existsSync(AUTOSTART_MARKER)) {
+      execSync(`start "" wscript.exe "${watchdogPath}"`, { stdio: "ignore", shell: true });
+      fs.writeFileSync(AUTOSTART_MARKER, new Date().toISOString(), "utf8");
+    }
+    return "installed";
+  } catch {
+    return "failed";
+  }
 }
 
 // ── Detection loop ───────────────────────────────────────────────────────────
@@ -166,10 +226,27 @@ async function main() {
     };
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
 
-    console.log("");
-    console.log("  ✓ Appareil approuvé — connexion établie.");
-    console.log("  En attente de commandes…  (Ctrl+C pour quitter)");
-    console.log("");
+    // Foreground (plain double-click): install background autostart, then hand
+    // off to a hidden instance and close this window so nothing stays visible.
+    if (!BACKGROUND) {
+      const res = installAutostart();
+      if (res === "installed") {
+        console.log("");
+        console.log("  ✓ Appareil approuvé — connexion établie.");
+        console.log("  L'agent passe en arrière-plan : cette fenêtre va se fermer,");
+        console.log("  l'agent continue tout seul (invisible) et redémarrera automatiquement.");
+        console.log("");
+        await sleep(3000);
+        process.exit(0); // window closes; watchdog relaunches us hidden with --bg
+      }
+      // Non-Windows / dev / install failed → just run in this window.
+      console.log("");
+      console.log("  ✓ Appareil approuvé — connexion établie.");
+      console.log("  En attente de commandes…  (laissez cette fenêtre ouverte)");
+      console.log("");
+    } else {
+      console.log("  ✓ Connecté (arrière-plan). En attente de commandes…");
+    }
 
     const reason = await runPollLoop(config);
     if (reason === "unauthorized") {

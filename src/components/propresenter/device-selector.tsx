@@ -46,9 +46,15 @@ export function DeviceSelector({
       );
       setDevices(newDevices);
 
-      // Auto-select default or first online device
+      // Auto-select. Prefer the default device only if it's online; otherwise
+      // prefer any online device, so a powered-off default doesn't get picked
+      // (which would send to an offline agent). Fall back to default, then first.
       if (!selectedDeviceId || !newDevices.find((d) => d.id === selectedDeviceId)) {
-        const def = newDevices.find((d) => d.isDefault) ?? newDevices.find((d) => d.online) ?? newDevices[0];
+        const def =
+          newDevices.find((d) => d.isDefault && d.online) ??
+          newDevices.find((d) => d.online) ??
+          newDevices.find((d) => d.isDefault) ??
+          newDevices[0];
         if (def) onDeviceChange(def.id);
       }
     } catch {
