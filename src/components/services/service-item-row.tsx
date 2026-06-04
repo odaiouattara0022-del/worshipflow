@@ -28,9 +28,10 @@ interface ServiceItemRowProps {
   };
   isSelected: boolean;
   onClick: () => void;
+  time?: string;
 }
 
-export function ServiceItemRow({ item, isSelected, onClick }: ServiceItemRowProps) {
+export function ServiceItemRow({ item, isSelected, onClick, time }: ServiceItemRowProps) {
   const {
     attributes,
     listeners,
@@ -73,6 +74,12 @@ export function ServiceItemRow({ item, isSelected, onClick }: ServiceItemRowProp
       >
         ⠿
       </button>
+
+      {time && (
+        <span className="text-xs font-mono text-muted-foreground shrink-0 w-11 tabular-nums">
+          {time}
+        </span>
+      )}
 
       <Badge className={cn("text-[10px] shrink-0", TYPE_COLORS[item.type] ?? TYPE_COLORS.CUSTOM)}>
         {item.type}

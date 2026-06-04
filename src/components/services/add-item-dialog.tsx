@@ -24,27 +24,45 @@ const ITEM_TYPES = [
   { value: "CUSTOM", label: "Personnalisé", icon: "✏️" },
 ] as const;
 
+interface SongOption { id: string; title: string; defaultKey: string }
+
 interface AddItemDialogProps {
   serviceId: string;
+  songs: SongOption[];
   onItemAdded: (item: Record<string, unknown>) => void;
 }
 
-export function AddItemDialog({ serviceId, onItemAdded }: AddItemDialogProps) {
+export function AddItemDialog({ serviceId, songs, onItemAdded }: AddItemDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("");
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("5");
+  const [songId, setSongId] = useState("");
+  const [songSearch, setSongSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   function reset() {
     setSelectedType("");
     setTitle("");
     setDuration("5");
+    setSongId("");
+    setSongSearch("");
   }
+
+  const filteredSongs = songs.filter((s) =>
+    s.title.toLowerCase().includes(songSearch.toLowerCase())
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedType) return;
+
+    const chosenSong = selectedType === "SONG" ? songs.find((s) => s.id === songId) : undefined;
+    const finalTitle =
+      chosenSong?.title ||
+      title ||
+      ITEM_TYPES.find((t) => t.value === selectedType)?.label ||
+      selectedType;
 
     setLoading(true);
     const res = await fetch(`/api/services/${serviceId}/items`, {
@@ -52,8 +70,9 @@ export function AddItemDialog({ serviceId, onItemAdded }: AddItemDialogProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: selectedType,
-        title: title || ITEM_TYPES.find((t) => t.value === selectedType)?.label || selectedType,
+        title: finalTitle,
         duration: parseInt(duration) || 5,
+        ...(chosenSong ? { songId: chosenSong.id } : {}),
       }),
     });
 
@@ -95,16 +114,51 @@ export function AddItemDialog({ serviceId, onItemAdded }: AddItemDialogProps) {
             ))}
           </div>
 
+          {selectedType === "SONG" && (
+            <div className="space-y-2">
+              <Label>Choisir le chant</Label>
+              <Input
+                value={songSearch}
+                onChange={(e) => setSongSearch(e.target.value)}
+                placeholder="Rechercher un chant…"
+              />
+              <div className="max-h-44 overflow-y-auto rounded-md border border-border divide-y">
+                {filteredSongs.length === 0 && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">Aucun chant trouvé.</p>
+                )}
+                {filteredSongs.slice(0, 50).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSongId(s.id)}
+                    className={cn(
+                      "w-full text-left px-3 py-2 text-sm transition-colors",
+                      songId === s.id ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
+                    )}
+                  >
+                    {s.title} <span className="text-xs text-muted-foreground">({s.defaultKey})</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Optionnel — vous pourrez aussi choisir/changer le chant plus tard.
+              </p>
+            </div>
+          )}
+
+          {selectedType && selectedType !== "SONG" && (
+            <div className="space-y-2">
+              <Label>Titre</Label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={ITEM_TYPES.find((t) => t.value === selectedType)?.label}
+              />
+            </div>
+          )}
+
           {selectedType && (
             <>
-              <div className="space-y-2">
-                <Label>Titre</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={ITEM_TYPES.find((t) => t.value === selectedType)?.label}
-                />
-              </div>
               <div className="space-y-2">
                 <Label>Durée (minutes)</Label>
                 <Input
