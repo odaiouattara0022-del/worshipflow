@@ -378,6 +378,7 @@ function model(tableName: string): {
           const orStr = (where.OR as WhereInput[])
             .flatMap((cond) =>
               Object.entries(cond).map(([k, v]) => {
+                if (v === null) return `${k}.is.null`;
                 if (typeof v === "object" && v !== null && "contains" in (v as AnyObj))
                   return `${k}.ilike.%${(v as AnyObj).contains}%`;
                 return `${k}.eq.${toIso(v)}`;

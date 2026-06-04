@@ -12,11 +12,15 @@ interface SongCardProps {
     useCount: number;
     lastUsedAt: Date | string | null;
     proPresenterPath: string | null;
+    churchId?: string | null;
+    isPublic?: boolean;
   };
+  currentChurchId?: string | null;
 }
 
-export function SongCard({ song }: SongCardProps) {
+export function SongCard({ song, currentChurchId }: SongCardProps) {
   const tags = song.tags ? song.tags.split(",").filter(Boolean) : [];
+  const ownedByMe = !!currentChurchId && song.churchId === currentChurchId;
 
   return (
     <Link href={`/songs/${song.id}`}>
@@ -32,6 +36,15 @@ export function SongCard({ song }: SongCardProps) {
             <p className="text-xs text-muted-foreground mt-1">{song.author}</p>
           )}
           <div className="flex gap-1 mt-2 flex-wrap">
+            {ownedByMe ? (
+              <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[10px]">
+                Mon église{song.isPublic ? " · publié" : ""}
+              </Badge>
+            ) : (
+              <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px]">
+                Public
+              </Badge>
+            )}
             {tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">
                 {tag.trim()}

@@ -12,6 +12,7 @@ import { SlidePreview } from "@/components/songs/slide-preview";
 import { AudioPlayer } from "@/components/songs/audio-player";
 import { ChordSection } from "@/components/songs/chord-section";
 import { SongTabs } from "@/components/songs/song-tabs";
+import { SongScopeActions } from "@/components/songs/song-scope-actions";
 import { Button } from "@/components/ui/button";
 
 export default async function SongDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -94,6 +95,14 @@ export default async function SongDetailPage({ params }: { params: Promise<{ id:
         <div className="space-y-4">
           {/* Send to ProPresenter */}
           <SendSongToPP songId={song.id} songTitle={song.title} />
+
+          {/* Sharing (public / copy to my church) */}
+          <SongScopeActions
+            songId={song.id}
+            churchId={(song as any).churchId ?? null}
+            isPublic={(song as any).isPublic ?? false}
+          />
+
 
           {/* Audio Player */}
           <AudioPlayer songId={song.id} audioUrl={song.audioUrl} audioLabel={song.audioLabel} />
