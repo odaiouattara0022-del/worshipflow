@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { SongPicker } from "@/components/songs/song-picker";
+import { Combobox } from "@/components/ui/combobox";
 
 const ITEM_TYPES = [
   { value: "SONG", label: "Chant", icon: "🎵" },
@@ -112,7 +112,13 @@ export function AddItemDialog({ serviceId, songs, onItemAdded }: AddItemDialogPr
           {selectedType === "SONG" && (
             <div className="space-y-2">
               <Label>Choisir le chant</Label>
-              <SongPicker songs={songs} value={songId} onChange={setSongId} />
+              <Combobox
+                options={songs.map((s) => ({ value: s.id, label: s.title, hint: s.defaultKey }))}
+                value={songId}
+                onChange={setSongId}
+                placeholder="Choisir un chant…"
+                searchPlaceholder="Rechercher un chant…"
+              />
               <p className="text-[11px] text-muted-foreground">
                 Optionnel — vous pourrez aussi choisir/changer le chant plus tard.
               </p>

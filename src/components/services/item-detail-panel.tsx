@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SongPicker } from "@/components/songs/song-picker";
+import { Combobox } from "@/components/ui/combobox";
 
 interface Song {
   id: string;
@@ -129,29 +129,33 @@ export function ItemDetailPanel({
       {item.type === "SONG" && (
         <div className="space-y-2">
           <Label>Chant</Label>
-          <SongPicker
-            songs={songs}
+          <Combobox
+            options={songs.map((s) => ({ value: s.id, label: s.title, hint: s.defaultKey }))}
             value={form.songId}
             onChange={(songId) => setForm({ ...form, songId })}
             allowNone
+            noneLabel="Aucun chant"
+            placeholder="Choisir un chant…"
+            searchPlaceholder="Rechercher un chant…"
           />
         </div>
       )}
 
       <div className="space-y-2">
         <Label>Responsable</Label>
-        <select
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+        <Combobox
+          options={users.map((u) => ({
+            value: u.id,
+            label: u.name,
+            note: unavailableUserIds.includes(u.id) ? "indisponible" : undefined,
+          }))}
           value={form.assigneeId}
-          onChange={(e) => setForm({ ...form, assigneeId: e.target.value })}
-        >
-          <option value="">-- Aucun --</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name}{unavailableUserIds.includes(u.id) ? " — indisponible" : ""}
-            </option>
-          ))}
-        </select>
+          onChange={(assigneeId) => setForm({ ...form, assigneeId })}
+          allowNone
+          noneLabel="Aucun responsable"
+          placeholder="Choisir un responsable…"
+          searchPlaceholder="Rechercher un membre…"
+        />
         {form.assigneeId && unavailableUserIds.includes(form.assigneeId) && (
           <p className="text-xs text-amber-600">⚠ Cette personne s&apos;est déclarée indisponible ce jour-là.</p>
         )}
