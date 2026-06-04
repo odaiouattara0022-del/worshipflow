@@ -35,6 +35,7 @@ export default function ThemesPage() {
   const [loading, setLoading] = useState(true);
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
   const [search, setSearch] = useState("");
+  const [themeSearch, setThemeSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/songs")
@@ -50,6 +51,15 @@ export default function ThemesPage() {
         map.set(t, (map.get(t) ?? 0) + 1);
     return map;
   }, [songs]);
+
+  // Theme browser: filter by name, populated themes first (then empty ones).
+  const browserThemes = useMemo(() => {
+    const q = themeSearch.trim().toLowerCase();
+    return WORSHIP_THEMES
+      .filter((t) => !q || t.label.toLowerCase().includes(q))
+      .map((t) => ({ theme: t, count: countByTheme.get(t.slug) ?? 0 }))
+      .sort((a, b) => b.count - a.count);
+  }, [themeSearch, countByTheme]);
 
   const themeSongs = useMemo(() =>
     activeTheme ? songs.filter((s) => parseTags(s.tags).includes(activeTheme.slug)) : [],
@@ -75,32 +85,44 @@ export default function ThemesPage() {
           </p>
         </div>
 
-        {/* Theme grid */}
+        {/* Theme search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Rechercher un thème…"
+            value={themeSearch}
+            onChange={(e) => setThemeSearch(e.target.value)}
+            className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        {/* Theme grid — populated themes first, empty ones dimmed */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-border rounded-lg overflow-hidden border border-border">
-          {WORSHIP_THEMES.map((theme) => {
-            const count = countByTheme.get(theme.slug) ?? 0;
-            return (
-              <button
-                key={theme.slug}
-                onClick={() => { setActiveTheme(theme); setSearch(""); }}
-                className="group flex flex-col gap-3 bg-card p-5 text-left hover:bg-accent transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="rounded-md bg-muted p-2">
-                    <ThemeIcon name={theme.icon} className="h-4 w-4 text-foreground" />
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
+          {browserThemes.map(({ theme, count }) => (
+            <button
+              key={theme.slug}
+              onClick={() => { setActiveTheme(theme); setSearch(""); }}
+              className={cn(
+                "group flex flex-col gap-2.5 bg-card p-4 sm:p-5 text-left hover:bg-accent transition-colors",
+                count === 0 && "opacity-55"
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="rounded-md bg-muted p-2">
+                  <ThemeIcon name={theme.icon} className="h-4 w-4 text-foreground" />
                 </div>
-                <div>
-                  <p className="font-semibold text-sm">{theme.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{theme.description}</p>
-                </div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  {count} {count === 1 ? "chant" : "chants"}
-                </p>
-              </button>
-            );
-          })}
+                <span className="text-sm font-semibold tabular-nums text-muted-foreground">{count}</span>
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{theme.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{theme.description}</p>
+              </div>
+            </button>
+          ))}
+          {browserThemes.length === 0 && (
+            <p className="col-span-full bg-card p-6 text-center text-sm text-muted-foreground">Aucun thème trouvé.</p>
+          )}
         </div>
       </div>
     );
@@ -164,7 +186,7 @@ export default function ThemesPage() {
       ) : (
         <div className="rounded-lg border border-border overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[2rem_1fr_auto_auto] gap-4 bg-muted/50 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+          <div className="grid grid-cols-[1.5rem_1fr_auto] md:grid-cols-[2rem_1fr_auto_auto] gap-3 md:gap-4 bg-muted/50 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
             <span>#</span>
             <span>Titre</span>
             <span className="hidden md:block">Autres thèmes</span>
@@ -183,7 +205,7 @@ export default function ThemesPage() {
                 key={song.id}
                 onClick={() => router.push(`/songs/${song.id}`)}
                 className={cn(
-                  "group w-full grid grid-cols-[2rem_1fr_auto_auto] gap-4 items-center px-4 py-3 text-left transition-colors hover:bg-accent/50",
+                  "group w-full grid grid-cols-[1.5rem_1fr_auto] md:grid-cols-[2rem_1fr_auto_auto] gap-3 md:gap-4 items-center px-4 py-3 text-left transition-colors hover:bg-accent/50",
                   idx !== filteredSongs.length - 1 && "border-b border-border/50"
                 )}
               >
