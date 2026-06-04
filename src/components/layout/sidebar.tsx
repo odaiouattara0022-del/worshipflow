@@ -6,33 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import {
-  LayoutDashboard, CalendarDays, Music2, Tag, Monitor,
-  Radio, Mic2, Calendar, Bell, Settings, ChevronRight,
-  LogOut, User, ChevronUp, Building2,
-} from "lucide-react";
-
-const NAV_GROUPS = [
-  {
-    label: null,
-    items: [
-      { href: "/dashboard",    label: "Tableau de bord", icon: LayoutDashboard },
-      { href: "/services",     label: "Services",         icon: CalendarDays },
-      { href: "/songs",        label: "Chants",           icon: Music2 },
-      { href: "/themes",       label: "Thèmes",           icon: Tag },
-      { href: "/calendar",     label: "Calendrier",       icon: Calendar },
-      { href: "/church",       label: "Mon Église",       icon: Building2 },
-    ],
-  },
-  {
-    label: "Présentation",
-    items: [
-      { href: "/propresenter", label: "Appareils",         icon: Monitor },
-      { href: "/live",         label: "Live Control",     icon: Radio },
-      { href: "/rehearsal",    label: "Répétition",       icon: Mic2 },
-    ],
-  },
-];
+import { Bell, Settings, ChevronRight, LogOut, User, ChevronUp } from "lucide-react";
+import { NAV_SECTIONS } from "@/components/layout/nav-items";
 
 interface NavItemProps {
   href: string;
@@ -177,7 +152,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2">
-        {NAV_GROUPS.map((group, gi) => (
+        {NAV_SECTIONS.map((group, gi) => (
           <div key={gi} className={cn(gi > 0 && "mt-4")}>
             {group.label && (
               <p className="mb-1 px-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
