@@ -9,7 +9,7 @@
  * Server URL resolution order (the end user never touches this):
  *   1. PSW_SERVER environment variable
  *   2. serveur.txt next to the exe (one line: the URL)
- *   3. baked default → https://prosendworship.vercel.app
+ *   3. baked default → the production site (Hostinger)
  */
 
 "use strict";
@@ -29,7 +29,7 @@ const CONFIG_FILE = path.join(BASE_DIR, "pp-agent-config.json");
 const SERVER_FILE = path.join(BASE_DIR, "serveur.txt");
 const LOCK_PORT = 49517; // single-instance guard: only one poller binds this
 
-const DEFAULT_SERVER = "https://prosendworship.vercel.app";
+const DEFAULT_SERVER = "https://papayawhip-swan-436732.hostingersite.com";
 
 process.env.PP_AGENT_BASE_DIR = BASE_DIR;
 
