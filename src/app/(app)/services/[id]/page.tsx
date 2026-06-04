@@ -73,6 +73,7 @@ export default function ServiceEditorPage() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [songs, setSongs] = useState<Song[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [unavailableUserIds, setUnavailableUserIds] = useState<string[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -93,6 +94,24 @@ export default function ServiceEditorPage() {
     // Load the whole team so any member can be assigned (not only those already assigned).
     fetch("/api/team").then((r) => r.json()).then(setUsers).catch(() => {});
   }, [fetchService]);
+
+  // Who is marked unavailable on the service date — surfaced in the assignee picker.
+  useEffect(() => {
+    if (!service?.date) return;
+    const d = new Date(service.date);
+    const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    fetch(`/api/availability?month=${month}`)
+      .then((r) => r.json())
+      .then((rows: { userId: string; date: string; available: boolean }[]) => {
+        const day = d.toDateString();
+        setUnavailableUserIds(
+          (rows ?? [])
+            .filter((a) => a.available === false && new Date(a.date).toDateString() === day)
+            .map((a) => a.userId)
+        );
+      })
+      .catch(() => {});
+  }, [service?.date]);
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -246,6 +265,7 @@ export default function ServiceEditorPage() {
                 serviceId={service.id}
                 songs={songs}
                 users={users}
+                unavailableUserIds={unavailableUserIds}
                 onSave={handleItemSaved}
                 onDelete={handleItemDeleted}
               />

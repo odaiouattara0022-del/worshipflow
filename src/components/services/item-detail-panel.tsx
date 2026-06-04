@@ -35,6 +35,7 @@ interface ItemDetailPanelProps {
   serviceId: string;
   songs: Song[];
   users: User[];
+  unavailableUserIds?: string[];
   onSave: (updated: ServiceItemData) => void;
   onDelete: (itemId: string) => void;
 }
@@ -44,6 +45,7 @@ export function ItemDetailPanel({
   serviceId,
   songs,
   users,
+  unavailableUserIds = [],
   onSave,
   onDelete,
 }: ItemDetailPanelProps) {
@@ -151,10 +153,13 @@ export function ItemDetailPanel({
           <option value="">-- Aucun --</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
-              {u.name}
+              {u.name}{unavailableUserIds.includes(u.id) ? " — indisponible" : ""}
             </option>
           ))}
         </select>
+        {form.assigneeId && unavailableUserIds.includes(form.assigneeId) && (
+          <p className="text-xs text-amber-600">⚠ Cette personne s&apos;est déclarée indisponible ce jour-là.</p>
+        )}
       </div>
 
       <div className="space-y-2">
