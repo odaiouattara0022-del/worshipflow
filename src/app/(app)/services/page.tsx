@@ -7,6 +7,9 @@ import { ServiceCard } from "@/components/services/service-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +39,9 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { confirm, ConfirmDialog } = useConfirm();
   const [form, setForm] = useState({
     title: "",
     date: "",
@@ -79,6 +85,44 @@ export default function ServicesPage() {
       router.push(`/services/${service.id}`);
     }
     setCreating(false);
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: `Supprimer ${ids.length} service${ids.length > 1 ? "s" : ""} ?`,
+      description: "Les services sélectionnés et tous leurs éléments seront définitivement supprimés. Cette action est irréversible.",
+      confirmLabel: "Supprimer",
+    });
+    if (!ok) return;
+
+    const res = await fetch("/api/services/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setServices((prev) => prev.filter((s) => !selectedIds.has(s.id)));
+      toast.success(`${data.count ?? ids.length} service(s) supprimé(s)`);
+      exitSelectMode();
+    } else {
+      toast.error("Suppression impossible");
+    }
   }
 
   return (
@@ -161,6 +205,29 @@ export default function ServicesPage() {
         }
       />
 
+      {!loading && services.length > 0 && (
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          {selectMode ? (
+            <>
+              <span className="text-sm text-muted-foreground">{selectedIds.size} sélectionné{selectedIds.size > 1 ? "s" : ""}</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set(services.map((s) => s.id)))}>
+                  Tout sélectionner
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={selectedIds.size === 0}>
+                  <Trash2 className="h-4 w-4 mr-1.5" /> Supprimer ({selectedIds.size})
+                </Button>
+                <Button variant="ghost" size="sm" onClick={exitSelectMode}>Annuler</Button>
+              </div>
+            </>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => setSelectMode(true)}>
+              Sélectionner
+            </Button>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <p className="text-muted-foreground">Chargement...</p>
       ) : services.length === 0 ? (
@@ -176,11 +243,15 @@ export default function ServicesPage() {
             <ServiceCard
               key={service.id}
               service={service}
+              selectable={selectMode}
+              selected={selectedIds.has(service.id)}
+              onToggleSelect={() => toggleSelect(service.id)}
               onDeleted={() => setServices((prev) => prev.filter((s) => s.id !== service.id))}
             />
           ))}
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 }
