@@ -1,31 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createNotification } from "@/lib/notifications/service";
 import { sendEmail, emailTemplate } from "@/lib/notifications/email";
+import { requireSession } from "@/lib/security";
 
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
 }
+function startOfDay(date: Date): Date { const d = new Date(date); d.setHours(0, 0, 0, 0); return d; }
+function endOfDay(date: Date): Date { const d = new Date(date); d.setHours(23, 59, 59, 999); return d; }
 
-function startOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
-
-export async function POST() {
+// Sends service reminders to the people actually responsible (item assignees),
+// J-N days before each service. Idempotent: the same reminder isn't sent twice
+// the same day. Returns a summary.
+async function runReminders() {
   const now = new Date();
+  const today = startOfDay(now);
   let totalSent = 0;
 
-  // Load configured reminder days (default: 7,3,1)
   const setting = await prisma.appSettings.findFirst({ where: { key: "reminderDays" } });
   const REMINDER_DAYS = (setting?.value ?? "7,3,1")
     .split(",")
@@ -34,77 +28,70 @@ export async function POST() {
 
   for (const daysBefore of REMINDER_DAYS) {
     const targetDate = addDays(now, daysBefore);
-    const dayStart = startOfDay(targetDate);
-    const dayEnd = endOfDay(targetDate);
 
-    // Find services happening on that target date
     const services = await prisma.service.findMany({
-      where: {
-        date: { gte: dayStart, lte: dayEnd },
-        status: { not: "DONE" },
-      },
-      include: {
-        assignments: {
-          where: { status: { not: "DECLINED" } },
-          include: { user: { select: { id: true, name: true, email: true } } },
-        },
-      },
+      where: { date: { gte: startOfDay(targetDate), lte: endOfDay(targetDate) }, status: { not: "DONE" } },
+      include: { items: true },
     });
 
     for (const service of services) {
-      const dateStr = service.date.toLocaleDateString("fr-FR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      });
+      const dateStr = new Date(service.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
-      for (const assignment of service.assignments) {
-        const reminderKey = `reminder-${service.id}-${assignment.userId}-J${daysBefore}`;
+      // The people actually assigned to this service = distinct item assignees.
+      const assigneeIds = [...new Set(
+        (service.items as any[]).map((i) => i.assigneeId).filter(Boolean)
+      )];
+      if (assigneeIds.length === 0) continue;
 
-        // Check if this reminder was already sent
+      const users = await prisma.user.findMany({ where: { id: { in: assigneeIds } } });
+
+      for (const u of users) {
+        const message = `Rappel J-${daysBefore} : « ${service.title} » le ${dateStr}`;
+
+        // Dedup: skip if the same reminder already went out today.
         const existing = await prisma.notification.findFirst({
-          where: {
-            userId: assignment.userId,
-            message: { contains: reminderKey },
-          },
+          where: { userId: u.id, type: "REMINDER", message, sentAt: { gte: today.toISOString() } },
         });
-
         if (existing) continue;
 
-        const message = `Rappel J-${daysBefore} : ${service.title} le ${dateStr} (rôle : ${assignment.role}) [${reminderKey}]`;
+        await createNotification({ userId: u.id, type: "REMINDER", message });
 
-        // In-app notification
-        await createNotification({
-          userId: assignment.userId,
-          type: "REMINDER",
-          message,
-        });
-
-        // Email if user has email
-        if (assignment.user.email) {
-          const emailSubject = `Rappel : ${service.title} dans ${daysBefore} jour${daysBefore > 1 ? "s" : ""}`;
-          const emailBody = emailTemplate(
-            `<p>Bonjour <strong>${assignment.user.name}</strong>,</p>
-             <p>Vous avez un service dans <strong>${daysBefore} jour${daysBefore > 1 ? "s" : ""}</strong> :</p>
-             <table style="margin:16px 0;padding:16px;background:#f9fafb;border-radius:8px;width:100%;border:1px solid #e5e7eb;">
-               <tr><td style="font-weight:600;font-size:16px;padding-bottom:8px;">${service.title}</td></tr>
-               <tr><td style="color:#6b7280;">📅 ${dateStr}</td></tr>
-               <tr><td style="color:#6b7280;padding-top:4px;">🎯 Rôle : ${assignment.role}</td></tr>
-             </table>
-             <p style="color:#6b7280;font-size:13px;">Connectez-vous à ProSendWorship pour voir les détails du service.</p>`,
-            emailSubject
+        if ((u as any).email) {
+          const subject = `Rappel : ${service.title} dans ${daysBefore} jour${daysBefore > 1 ? "s" : ""}`;
+          await sendEmail(
+            (u as any).email,
+            subject,
+            emailTemplate(
+              `<p>Bonjour <strong>${u.name}</strong>,</p>
+               <p>Vous êtes attendu pour un service dans <strong>${daysBefore} jour${daysBefore > 1 ? "s" : ""}</strong> :</p>
+               <table style="margin:16px 0;padding:16px;background:#f9fafb;border-radius:8px;width:100%;border:1px solid #e5e7eb;">
+                 <tr><td style="font-weight:600;font-size:16px;padding-bottom:8px;">${service.title}</td></tr>
+                 <tr><td style="color:#6b7280;">📅 ${dateStr}</td></tr>
+               </table>
+               <p style="color:#6b7280;font-size:13px;">Connectez-vous à ProSendWorship pour voir les détails.</p>`,
+              subject
+            )
           );
-          await sendEmail(assignment.user.email, emailSubject, emailBody);
         }
-
         totalSent++;
       }
     }
   }
 
-  return NextResponse.json({
-    success: true,
-    remindersSent: totalSent,
-    checkedAt: now.toISOString(),
-  });
+  return { success: true, remindersSent: totalSent, checkedAt: now.toISOString() };
+}
+
+// Automatic trigger (Vercel Cron hits this with GET). Guarded by CRON_SECRET when set.
+export async function GET(request: NextRequest) {
+  const secret = process.env.CRON_SECRET;
+  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return NextResponse.json(await runReminders());
+}
+
+// Manual trigger from Settings (logged-in admins).
+export async function POST() {
+  try { await requireSession(); } catch (e) { return e as Response; }
+  return NextResponse.json(await runReminders());
 }

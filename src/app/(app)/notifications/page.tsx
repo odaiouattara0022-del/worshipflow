@@ -19,6 +19,7 @@ interface Notification {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const fetchNotifications = useCallback(async () => {
     const res = await fetch("/api/notifications");
@@ -49,6 +50,15 @@ export default function NotificationsPage() {
     setUnreadCount(0);
   }
 
+  async function handleDelete(id: string) {
+    const target = notifications.find((n) => n.id === id);
+    await fetch(`/api/notifications/${id}`, { method: "DELETE" });
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    if (target && !target.readAt) setUnreadCount((c) => Math.max(0, c - 1));
+  }
+
+  const shown = filter === "unread" ? notifications.filter((n) => !n.readAt) : notifications;
+
   return (
     <div>
       <Header
@@ -63,16 +73,30 @@ export default function NotificationsPage() {
         }
       />
 
-      <Card className="mt-6">
-        <ScrollArea className="h-[calc(100vh-200px)]">
+      <div className="flex gap-1 mt-4">
+        {([["all", "Toutes"], ["unread", "Non lues"]] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+              filter === key ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-accent text-foreground"
+            }`}
+          >
+            {label}{key === "unread" && unreadCount > 0 ? ` (${unreadCount})` : ""}
+          </button>
+        ))}
+      </div>
+
+      <Card className="mt-3">
+        <ScrollArea className="h-[calc(100vh-220px)]">
           <div className="p-4 space-y-1">
-            {notifications.length === 0 ? (
+            {shown.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <p className="text-lg">🔔</p>
-                <p className="mt-2">Aucune notification</p>
+                <p className="mt-2">{filter === "unread" ? "Aucune notification non lue" : "Aucune notification"}</p>
               </div>
             ) : (
-              notifications.map((n) => (
+              shown.map((n) => (
                 <NotificationItem
                   key={n.id}
                   id={n.id}
@@ -81,6 +105,7 @@ export default function NotificationsPage() {
                   sentAt={n.sentAt}
                   readAt={n.readAt}
                   onMarkRead={handleMarkRead}
+                  onDelete={handleDelete}
                 />
               ))
             )}
