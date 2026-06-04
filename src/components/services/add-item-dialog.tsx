@@ -122,21 +122,22 @@ export function AddItemDialog({ serviceId, songs, onItemAdded }: AddItemDialogPr
                 onChange={(e) => setSongSearch(e.target.value)}
                 placeholder="Rechercher un chant…"
               />
-              <div className="max-h-44 overflow-y-auto rounded-md border border-border divide-y">
+              <div className="max-h-64 overflow-y-auto rounded-md border border-border divide-y bg-background">
                 {filteredSongs.length === 0 && (
-                  <p className="px-3 py-2 text-xs text-muted-foreground">Aucun chant trouvé.</p>
+                  <p className="px-3 py-3 text-sm text-muted-foreground">Aucun chant trouvé.</p>
                 )}
-                {filteredSongs.slice(0, 50).map((s) => (
+                {filteredSongs.slice(0, 100).map((s) => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => setSongId(s.id)}
                     className={cn(
-                      "w-full text-left px-3 py-2 text-sm transition-colors",
-                      songId === s.id ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
+                      "w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between gap-2",
+                      songId === s.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
                     )}
                   >
-                    {s.title} <span className="text-xs text-muted-foreground">({s.defaultKey})</span>
+                    <span className="truncate">{s.title}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{s.defaultKey}</span>
                   </button>
                 ))}
               </div>
