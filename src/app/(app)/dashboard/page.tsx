@@ -80,7 +80,7 @@ export default async function DashboardPage() {
               key={s.id}
               id={s.id}
               title={s.title}
-              date={s.date.toISOString()}
+              date={new Date(s.date).toISOString()}
               status={s.status}
               itemCount={s._count.items}
               assignmentCount={s._count.assignments}
