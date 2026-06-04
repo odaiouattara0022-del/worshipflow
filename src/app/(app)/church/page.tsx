@@ -91,6 +91,25 @@ export default function ChurchPage() {
   const [creatingNet, setCreatingNet]   = useState(false);
 
   const isAdmin = ["OWNER", "ADMIN"].includes((user as any)?.churchRole ?? "");
+  const isOwner = (user as any)?.churchRole === "OWNER";
+
+  async function changeMemberRole(userId: string, churchRole: string) {
+    const cid = (user as any)?.churchId;
+    if (!cid) return;
+    const res = await fetch(`/api/churches/${cid}/members/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ churchRole }),
+    });
+    if (res.ok) {
+      toast.success("Rôle mis à jour");
+      const c = await fetch(`/api/churches/${cid}`);
+      if (c.ok) setChurch(await c.json());
+    } else {
+      const e = await res.json().catch(() => ({}));
+      toast.error(e.error || "Impossible de changer le rôle");
+    }
+  }
   const u = user as any;
 
   const loadData = useCallback(async () => {
@@ -412,7 +431,19 @@ export default function ChurchPage() {
                 <div className="flex items-center gap-2"><p className="text-sm font-medium truncate">{m.name}</p>{["OWNER", "ADMIN"].includes(m.churchRole) && <Shield className="h-3.5 w-3.5 text-primary shrink-0" />}</div>
                 {m.instruments && <p className="text-xs text-muted-foreground truncate">{m.instruments}</p>}
               </div>
-              <span className="text-[10px] text-muted-foreground shrink-0 bg-muted px-1.5 py-0.5 rounded">{m.churchRole}</span>
+              {isOwner && m.churchRole !== "OWNER" && m.id !== (user as any)?.id ? (
+                <select
+                  value={m.churchRole}
+                  onChange={(e) => changeMemberRole(m.id, e.target.value)}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-xs shrink-0"
+                  title="Rôle du membre"
+                >
+                  <option value="MEMBER">Membre</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              ) : (
+                <span className="text-[10px] text-muted-foreground shrink-0 bg-muted px-1.5 py-0.5 rounded">{m.churchRole}</span>
+              )}
             </div>
           ))}
         </div>
