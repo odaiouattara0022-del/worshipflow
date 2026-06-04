@@ -13,6 +13,7 @@ const publicPaths = [
   "/api/auth/members",
   "/api/team",
   "/api/pp-bridge",
+  "/api/reminders", // Vercel cron (machine, no session cookie) — secured by CRON_SECRET in the route
 ];
 
 export function proxy(request: NextRequest) {

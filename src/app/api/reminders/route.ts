@@ -83,8 +83,10 @@ async function runReminders() {
 
 // Automatic trigger (Vercel Cron hits this with GET). Guarded by CRON_SECRET when set.
 export async function GET(request: NextRequest) {
+  // Now publicly routable (proxy), so it MUST carry the cron secret. If CRON_SECRET
+  // isn't configured, refuse outright rather than run unguarded.
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return NextResponse.json(await runReminders());
