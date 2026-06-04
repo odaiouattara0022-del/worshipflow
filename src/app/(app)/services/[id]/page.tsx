@@ -25,6 +25,7 @@ import { AddItemDialog } from "@/components/services/add-item-dialog";
 import { SendToPPButton } from "@/components/services/send-to-pp-button";
 import { DuplicateServiceButton } from "@/components/services/duplicate-service-button";
 import { SaveAsTemplateButton } from "@/components/services/save-as-template-button";
+import { DeleteServiceButton } from "@/components/services/delete-service-button";
 
 interface Song {
   id: string;
@@ -212,6 +213,11 @@ export default function ServiceEditorPage() {
           <SaveAsTemplateButton defaultName={service.title} items={templateItems} totalDuration={totalDuration} />
           <DuplicateServiceButton serviceId={service.id} serviceTitle={service.title} />
           <SendToPPButton serviceId={service.id} />
+          <DeleteServiceButton
+            serviceId={service.id}
+            serviceTitle={service.title}
+            onDeleted={() => router.push("/services")}
+          />
         </div>
       </div>
 

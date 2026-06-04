@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { DeleteServiceButton } from "@/components/services/delete-service-button";
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   DRAFT: {
@@ -28,38 +29,51 @@ interface ServiceCardProps {
     status: string;
     _count: { items: number; assignments: number };
   };
+  onDeleted?: () => void;
 }
 
-export function ServiceCard({ service }: ServiceCardProps) {
+export function ServiceCard({ service, onDeleted }: ServiceCardProps) {
   const statusCfg = STATUS_CONFIG[service.status] ?? STATUS_CONFIG.DRAFT;
   const dateStr = format(new Date(service.date), "EEEE d MMMM yyyy", {
     locale: fr,
   });
 
   return (
-    <Link href={`/services/${service.id}`}>
-      <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start">
-            <h3 className="font-semibold">{service.title}</h3>
-            <Badge className={statusCfg.className}>{statusCfg.label}</Badge>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 capitalize">
-            {dateStr}
-          </p>
-          <div className="flex gap-2 mt-3 items-center">
-            <Badge variant="outline" className="text-xs">
-              {service.type}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              {service._count.items} élément{service._count.items !== 1 ? "s" : ""}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {service._count.assignments} membre{service._count.assignments !== 1 ? "s" : ""}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+    <div className="relative">
+      <Link href={`/services/${service.id}`}>
+        <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start gap-2">
+              <h3 className="font-semibold">{service.title}</h3>
+              <Badge className={statusCfg.className}>{statusCfg.label}</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 capitalize">
+              {dateStr}
+            </p>
+            <div className="flex gap-2 mt-3 items-center">
+              <Badge variant="outline" className="text-xs">
+                {service.type}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {service._count.items} élément{service._count.items !== 1 ? "s" : ""}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {service._count.assignments} membre{service._count.assignments !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+      {onDeleted && (
+        <div className="absolute bottom-2 right-2">
+          <DeleteServiceButton
+            serviceId={service.id}
+            serviceTitle={service.title}
+            onDeleted={onDeleted}
+            variant="icon"
+          />
+        </div>
+      )}
+    </div>
   );
 }
