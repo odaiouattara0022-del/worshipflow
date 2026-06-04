@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SongPicker } from "@/components/songs/song-picker";
 
 interface Song {
   id: string;
@@ -128,18 +129,12 @@ export function ItemDetailPanel({
       {item.type === "SONG" && (
         <div className="space-y-2">
           <Label>Chant</Label>
-          <select
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+          <SongPicker
+            songs={songs}
             value={form.songId}
-            onChange={(e) => setForm({ ...form, songId: e.target.value })}
-          >
-            <option value="">-- Aucun --</option>
-            {songs.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title} ({s.defaultKey})
-              </option>
-            ))}
-          </select>
+            onChange={(songId) => setForm({ ...form, songId })}
+            allowNone
+          />
         </div>
       )}
 

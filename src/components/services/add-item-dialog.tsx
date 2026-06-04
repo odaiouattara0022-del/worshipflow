@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { SongPicker } from "@/components/songs/song-picker";
 
 const ITEM_TYPES = [
   { value: "SONG", label: "Chant", icon: "🎵" },
@@ -38,7 +39,6 @@ export function AddItemDialog({ serviceId, songs, onItemAdded }: AddItemDialogPr
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("5");
   const [songId, setSongId] = useState("");
-  const [songSearch, setSongSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   function reset() {
@@ -46,12 +46,7 @@ export function AddItemDialog({ serviceId, songs, onItemAdded }: AddItemDialogPr
     setTitle("");
     setDuration("5");
     setSongId("");
-    setSongSearch("");
   }
-
-  const filteredSongs = songs.filter((s) =>
-    s.title.toLowerCase().includes(songSearch.toLowerCase())
-  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -117,30 +112,7 @@ export function AddItemDialog({ serviceId, songs, onItemAdded }: AddItemDialogPr
           {selectedType === "SONG" && (
             <div className="space-y-2">
               <Label>Choisir le chant</Label>
-              <Input
-                value={songSearch}
-                onChange={(e) => setSongSearch(e.target.value)}
-                placeholder="Rechercher un chant…"
-              />
-              <div className="max-h-64 overflow-y-auto rounded-md border border-border divide-y bg-background">
-                {filteredSongs.length === 0 && (
-                  <p className="px-3 py-3 text-sm text-muted-foreground">Aucun chant trouvé.</p>
-                )}
-                {filteredSongs.slice(0, 100).map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setSongId(s.id)}
-                    className={cn(
-                      "w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between gap-2",
-                      songId === s.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
-                    )}
-                  >
-                    <span className="truncate">{s.title}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">{s.defaultKey}</span>
-                  </button>
-                ))}
-              </div>
+              <SongPicker songs={songs} value={songId} onChange={setSongId} />
               <p className="text-[11px] text-muted-foreground">
                 Optionnel — vous pourrez aussi choisir/changer le chant plus tard.
               </p>
