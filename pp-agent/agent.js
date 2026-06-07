@@ -88,45 +88,6 @@ function acquireSingleInstance() {
   });
 }
 
-// ── Background autostart (Windows, packaged exe only) ────────────────────────
-// Writes a one-line VBS launcher that starts the agent HIDDEN (--bg), registers
-// it to run at logon, and returns the launcher path. No WMI, no process polling:
-// backslashes are literal in VBScript, so the path needs no escaping. Returns
-// the launcher path on success, "skip" off-Windows/dev, or "failed".
-function installAutostart() {
-  if (process.platform !== "win32" || !IS_PKG) return "skip";
-  try {
-    const { execSync } = require("child_process");
-    const exePath  = process.execPath;
-    const exeDir   = path.dirname(exePath);
-    const taskName = "ProSendWorship Agent";
-    const launcherPath = path.join(exeDir, "_launch-hidden.vbs");
-
-    // "" embeds a literal quote in VBScript; window style 0 = hidden, False = don't wait.
-    const launcher = `CreateObject("WScript.Shell").Run """${exePath}"" --bg", 0, False`;
-    fs.writeFileSync(launcherPath, launcher, "utf8");
-
-    // Clean up the broken WMI watchdog shipped by an earlier build, if present.
-    try { fs.unlinkSync(path.join(exeDir, "_watchdog.vbs")); } catch { /* none */ }
-
-    try { execSync(`schtasks /delete /tn "${taskName}" /f`, { stdio: "ignore" }); } catch { /* none yet */ }
-    execSync(
-      `schtasks /create /tn "${taskName}" /tr "wscript.exe \\"${launcherPath}\\"" /sc ONLOGON /delay 0000:10 /rl HIGHEST /f /ru "${os.userInfo().username}"`,
-      { stdio: "ignore" }
-    );
-    return launcherPath;
-  } catch {
-    return "failed";
-  }
-}
-
-// Launch the hidden background agent now (returns immediately).
-function startHidden(launcherPath) {
-  try {
-    require("child_process").execSync(`wscript.exe "${launcherPath}"`, { stdio: "ignore" });
-  } catch { /* non-fatal */ }
-}
-
 // ── Detection loop ───────────────────────────────────────────────────────────
 async function detectSoftware() {
   let warned = false;
@@ -236,24 +197,17 @@ async function main() {
     };
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
 
-    // Foreground (plain double-click): install background autostart, launch a
-    // HIDDEN instance, then close this window so nothing stays visible.
+    // Stay running in this window and poll. A kept-open window is far more
+    // reliable for an unsigned exe than the hidden-relaunch trick (which Windows
+    // blocks via the "publisher not verified" warning on background launches).
     if (!BACKGROUND) {
-      const launcher = installAutostart();
-      if (typeof launcher === "string" && launcher !== "failed" && launcher !== "skip") {
-        console.log("");
-        console.log("  ✓ Appareil approuvé — connexion établie.");
-        console.log("  L'agent passe en arrière-plan : cette fenêtre va se fermer,");
-        console.log("  il continue tout seul (invisible) et redémarrera automatiquement.");
-        console.log("");
-        await sleep(3000);
-        startHidden(launcher);
-        process.exit(0); // window closes; the hidden --bg instance takes over
-      }
-      // Non-Windows / dev / install failed → run in this window instead.
       console.log("");
       console.log("  ✓ Appareil approuvé — connexion établie.");
-      console.log("  En attente de commandes…  (laissez cette fenêtre ouverte)");
+      console.log("  ┌──────────────────────────────────────────────┐");
+      console.log("  │  GARDEZ CETTE FENÊTRE OUVERTE (réduisez-la).   │");
+      console.log("  │  Ne la fermez pas tant que vous utilisez PP.  │");
+      console.log("  └──────────────────────────────────────────────┘");
+      console.log("  En attente de commandes…");
       console.log("");
     }
 
