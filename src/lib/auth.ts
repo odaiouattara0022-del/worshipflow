@@ -66,21 +66,27 @@ export async function verifyPin(pin: string, hash: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 // Session management
 // ---------------------------------------------------------------------------
-export async function createSession(userId: string): Promise<void> {
+export const SESSION_COOKIE = "wf_session";
+
+export const sessionCookieOptions = {
+  httpOnly: true,
+  path: "/",
+  maxAge: 60 * 60 * 24 * 30, // 30 days
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+};
+
+/** Signs a session token for a user (does NOT set any cookie). */
+export function createSessionToken(userId: string): string {
   const payload = Buffer.from(
     `${userId}:${Date.now()}:${crypto.randomBytes(8).toString("hex")}`
   ).toString("base64url");
+  return signToken(payload);
+}
 
-  const token = signToken(payload);
-
+export async function createSession(userId: string): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set("wf_session", token, {
-    httpOnly: true,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
+  cookieStore.set(SESSION_COOKIE, createSessionToken(userId), sessionCookieOptions);
 }
 
 export async function getCurrentUser() {

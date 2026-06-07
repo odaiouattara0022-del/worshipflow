@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
-import { hashPin, createSession } from "@/lib/auth";
+import { hashPin, createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 
 /**
  * POST /api/auth/register — HTML form-based registration (no JS needed).
@@ -61,7 +62,8 @@ export async function POST(request: Request) {
     },
   });
 
-  // Auto-login after registration
-  await createSession(user.id);
-  redirect("/");
+  // Auto-login after registration — cookie set directly on the redirect response.
+  const res = NextResponse.redirect(new URL("/dashboard", request.url), { status: 303 });
+  res.cookies.set(SESSION_COOKIE, createSessionToken(user.id), sessionCookieOptions);
+  return res;
 }

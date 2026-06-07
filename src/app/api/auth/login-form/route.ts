@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/db";
-import { verifyPin, createSession } from "@/lib/auth";
+import { verifyPin, createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 
 /**
  * POST /api/auth/login-form — HTML form-based login (no JS needed).
+ *
+ * On success we set the session cookie DIRECTLY on the redirect response (not via
+ * cookies().set() + redirect(), which doesn't reliably attach Set-Cookie to a
+ * redirect in a route handler — that caused "you have to try several times").
  */
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -28,10 +32,10 @@ export async function POST(request: Request) {
     redirect("/login?error=missing");
   }
 
-  let allUsers;
+  let token: string;
   try {
     const trimmedName = name.trim();
-    allUsers = await prisma.user.findMany({
+    const allUsers = await prisma.user.findMany({
       select: { id: true, name: true, pin: true, role: true },
     });
     const user = allUsers.find(
@@ -47,9 +51,9 @@ export async function POST(request: Request) {
       redirect("/login?error=invalid");
     }
 
-    await createSession(user.id);
+    token = createSessionToken(user.id);
   } catch (e: unknown) {
-    // Re-throw Next.js redirect errors
+    // Re-throw Next.js redirect "errors"
     if (e && typeof e === "object" && "digest" in e && typeof (e as { digest?: string }).digest === "string" && (e as { digest: string }).digest.startsWith("NEXT_REDIRECT")) {
       throw e;
     }
@@ -57,5 +61,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Login failed", details: String(e) }, { status: 500 });
   }
 
-  redirect("/");
+  // 303 → the browser does a GET on /dashboard; the cookie rides on this response.
+  const res = NextResponse.redirect(new URL("/dashboard", request.url), { status: 303 });
+  res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
+  return res;
 }
