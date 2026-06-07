@@ -131,6 +131,7 @@ async function handleThemes(params, config) {
 }
 
 async function readThemesFromDisk(config) {
+  if (!config.ppDataPath) return [];
   const themesDir = path.join(config.ppDataPath, "Themes");
   if (!fs.existsSync(themesDir)) return [];
 
@@ -168,6 +169,9 @@ async function readThemesFromDisk(config) {
 
 async function handleLibraries(params, config) {
   const { libraryPath: configuredPath } = params;
+  if (!configuredPath && !config.ppDataPath) {
+    return { libraries: [], message: "Dossier ProPresenter introuvable (relancez l'agent à jour)" };
+  }
   const basePath = configuredPath
     ? path.dirname(configuredPath)
     : path.join(config.ppDataPath, "Libraries");
