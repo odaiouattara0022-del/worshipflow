@@ -88,6 +88,32 @@ function acquireSingleInstance() {
   });
 }
 
+// ── ProPresenter data folder (for reading themes/libraries from disk) ────────
+function detectPPDataPath() {
+  const user = (() => { try { return os.userInfo().username; } catch { return ""; } })();
+  const candidates = [
+    path.join(os.homedir(), "Documents", "ProPresenter"),
+    path.join(os.homedir(), "OneDrive", "Documents", "ProPresenter"),
+    path.join(os.homedir(), "OneDrive", "Bureau", "ProPresenter"),
+    path.join("C:", "Users", user, "Documents", "ProPresenter"),
+    path.join("C:", "Users", user, "OneDrive", "Documents", "ProPresenter"),
+  ];
+  for (const c of candidates) { try { if (fs.existsSync(c)) return c; } catch { /* skip */ } }
+  return candidates[0]; // sensible default even if not found yet
+}
+
+function detectProtoDir() {
+  const candidates = [
+    path.join(os.homedir(), "AppData", "Local", "Temp", "pp7proto", "Proto 19beta"),
+    "C:\\Program Files\\ProPresenter\\proto",
+    "C:\\Program Files (x86)\\ProPresenter\\proto",
+  ];
+  for (const c of candidates) {
+    try { if (fs.existsSync(c) && fs.existsSync(path.join(c, "presentation.proto"))) return c; } catch { /* skip */ }
+  }
+  return null;
+}
+
 // ── Detection loop ───────────────────────────────────────────────────────────
 async function detectSoftware() {
   let warned = false;
@@ -188,6 +214,9 @@ async function main() {
       type: detected.type,
       ppHost: "127.0.0.1",
       ppPort: 1025,
+      ...(detected.type === "propresenter"
+        ? { ppDataPath: detectPPDataPath(), protoDir: detectProtoDir() }
+        : {}),
       ...(detected.type === "freeshow"
         ? { freeShowPort: detected.freeShowPort, freeShowShowsPath: detected.freeShowShowsPath }
         : {}),
@@ -203,6 +232,10 @@ async function main() {
     if (!BACKGROUND) {
       console.log("");
       console.log("  ✓ Appareil approuvé — connexion établie.");
+      if (detected.type === "propresenter") {
+        console.log(`  Dossier ProPresenter : ${config.ppDataPath}`);
+        console.log(`  ${fs.existsSync(path.join(config.ppDataPath, "Themes")) ? "✓ dossier Themes trouvé" : "⚠ dossier Themes introuvable (chemin ProPresenter à vérifier)"}`);
+      }
       console.log("  ┌──────────────────────────────────────────────┐");
       console.log("  │  GARDEZ CETTE FENÊTRE OUVERTE (réduisez-la).   │");
       console.log("  │  Ne la fermez pas tant que vous utilisez PP.  │");
